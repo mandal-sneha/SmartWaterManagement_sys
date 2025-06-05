@@ -1,145 +1,197 @@
-import React, { useState } from "react";
-import { axiosInstance } from "../lib/axios";
-import { useNavigate } from "react-router-dom";
-
-const FloatingLabelInput = ({ label, type = "text", name, value, onChange }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  return (
-    <div className="relative mb-3">
-      <input
-        type={type}
-        name={name}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder=" "
-        className="w-full h-14 border border-gray-300 rounded-lg px-4 focus:outline-none focus:border-blue-500"
-      />
-      <label
-        className={`pointer-events-none absolute cursor-text text-gray-500 duration-200 transform z-10 bg-white px-1 left-4 ${
-          value
-            ? "top-0 scale-75 -translate-y-1/2"
-            : isFocused
-            ? "top-0 scale-75 -translate-y-1/2"
-            : "top-1/2 -translate-y-1/2"
-        }`}
-      >
-        {label}
-      </label>
-    </div>
-  );
-};
-
-const PasswordInput = ({ label, name, value, onChange, showPassword, setShowPassword }) => {
-  const [isFocused, setIsFocused] = useState(false);
-  return (
-    <div className="relative mb-3">
-      <input
-        type={showPassword ? "text" : "password"}
-        name={name}
-        value={value}
-        onChange={onChange}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        placeholder=" "
-        className="w-full h-14 border border-gray-300 rounded-lg px-4 focus:outline-none focus:border-blue-500"
-      />
-      <label
-        className={`pointer-events-none absolute cursor-text text-gray-500 duration-200 transform z-10 bg-white px-1 left-4 ${
-          value
-            ? "top-0 scale-75 -translate-y-1/2"
-            : isFocused
-            ? "top-0 scale-75 -translate-y-1/2"
-            : "top-1/2 -translate-y-1/2"
-        }`}
-      >
-        {label}
-      </label>
-      <button
-        type="button"
-        onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-blue-500 text-sm"
-      >
-        {showPassword ? "HIDE" : "SHOW"}
-      </button>
-    </div>
-  );
-};
+import React, { useState, useEffect } from 'react';
 
 const LoginPage = () => {
-  const navigate = useNavigate();
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === "identifier") setIdentifier(value);
-    else if (name === "password") setPassword(value);
+  const handleLogin = () => {
+    alert(`Logging in with\nEmail: ${email}\nPassword: ${password}`);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
-    try {
-      setIsLoading(true);
-      const response = await axiosInstance.post("/user/login", { identifier, password });
-      if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        navigate(`/u/${response.data.user.userId}`);
-      }
-    } catch (error) {
-      setError(error.response?.data?.message || "Login failed. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // Load Google Font dynamically
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Italiana&display=swap';
+    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
+  }, []);
+
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: '20px',
+      boxSizing: 'border-box',
+      flexDirection: 'column',
+      // background: 'linear-gradient(135deg, #6e8efb, #a777e3)',
+    },
+    title: {
+      fontFamily: "'Poppins', sans-serif",
+      fontSize: '32px',
+      fontWeight: '700',
+      color: '#4b0082',
+      marginBottom: '8px',
+      textAlign: 'center',
+    },
+    subtitle: {
+      fontFamily: "'Poppins', sans-serif",
+      fontSize: '16px',
+      color: '#555',
+      marginBottom: '30px',
+      textAlign: 'center',
+    },
+    formBox: {
+      backgroundColor: 'rgba(255, 255, 255, 0.5)', // Semi-transparent
+      padding: '30px 25px',
+      borderRadius: '10px',
+      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+      width: '100%',
+      maxWidth: '390px',
+      boxSizing: 'border-box',
+    },
+    heading: {
+      // fontSize: '26px',
+      // fontWeight: 'bold',
+      marginBottom: '10px',
+      textAlign: 'center',
+      fontFamily: "'Poppins', sans-serif",
+      fontSize: '28px',
+      fontWeight: '500',
+      color: '#4b0082',
+      letterSpacing: '1px',
+    },
+    subheading: {
+      fontSize: '14px',
+      color: '#555',
+      marginBottom: '20px',
+      textAlign: 'center',
+      fontFamily: "'Poppins', sans-serif",
+    },
+    input: {
+      width: '100%',
+      padding: '10px',
+      marginBottom: '15px',
+      borderRadius: '6px',
+      border: '1px solid #ccc',
+      fontSize: '14px',
+      boxSizing: 'border-box',
+    },
+    passwordBox: {
+      position: 'relative',
+      
+    },
+    eyeButton: {
+      position: 'absolute',
+      top: '50%',
+      right: '10px',
+      transform: 'translateY(-50%)',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '16px',
+    },
+    label: {
+      display: 'block',
+      textAlign: 'left',
+      fontSize: '14px',
+      marginBottom: '5px',
+      fontFamily: "'Poppins', sans-serif",
+    },
+    forgotBox: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontSize: '13px',
+      marginTop: '-10px',
+      marginBottom: '10px',
+    },
+    forgotLink: {
+      textDecoration: 'none',
+      color: '#1230AE',
+      fontFamily: "'Poppins', sans-serif",
+    },
+    loginBtn: {
+      width: '100%',
+      padding: '12px',
+      backgroundImage: 'linear-gradient(to right, #6e8efb, #a777e3)',
+      color: '#fff',
+      border: 'none',
+      borderRadius: '6px',
+      fontSize: '15px',
+      fontFamily: "'Poppins', sans-serif",
+      cursor: 'pointer',
+      marginTop: '10px',
+    },
+    signupText: {
+      marginTop: '25px',
+      fontSize: '14px',
+      textAlign: 'center',
+      fontFamily: "'Poppins', sans-serif",
+    },
+    signupLink: {
+      color: '#1230AE',
+      textDecoration: 'underline',
+      marginLeft: '4px',
+      fontFamily: "'Poppins', sans-serif",
+    },
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="flex w-full max-w-4xl overflow-hidden rounded-2xl shadow-xl">
-        <div className="hidden w-1/2 bg-gradient-blue p-8 text-white md:flex md:flex-col md:items-center md:justify-center">
-          <h1 className="mb-4 text-4xl font-bold">WELCOME</h1>
-          <p className="text-center text-lg">
-            Your headline name goes here. Some welcoming text about the system.
-          </p>
+    <div style={styles.container}>
+      <h1 style={styles.title}>Welcome to HydraOne</h1>
+      <p style={styles.subtitle}>One-stop water resource</p>
+      
+      <div style={styles.formBox}>
+        <div style={styles.heading}>LOG IN</div>
+        <div style={styles.subheading}>
+          Enter your userID below to login to your account
         </div>
-        <div className="w-full bg-white p-8 md:w-1/2">
-          <div className="mx-auto max-w-md">
-            <h2 className="mb-8 text-3xl font-bold text-gray-800">Login</h2>
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              <FloatingLabelInput
-                label="User ID or Municipality ID"
-                name="identifier"
-                value={identifier}
-                onChange={handleChange}
-              />
-              <PasswordInput
-                label="Password"
-                name="password"
-                value={password}
-                onChange={handleChange}
-                showPassword={showPassword}
-                setShowPassword={setShowPassword}
-              />
-              {error && <p className="text-red-500 text-sm">{error}</p>}
-              <button
-                type="submit"
-                className="hover:bg-blue-700 focus:ring-blue-500 flex w-full justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer"
-              >
-                {isLoading ? "Processing..." : "Login"}
-              </button>
-            </form>
-            <p className="mt-8 text-center text-sm text-gray-600">
-              Don't have an account?{" "}
-              <a href="/signup" className="font-medium text-blue-600 hover:text-blue-500">
-                Sign up
-              </a>
-            </p>
-          </div>
+
+        <label style={styles.label}>userID</label>
+        <input
+          type="email"
+          // placeholder="m@example.com"
+          style={styles.input}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <div style={styles.forgotBox}>
+          <label style={styles.label}>Password</label>
+          <a href="#" style={styles.forgotLink}>
+            Forgot password?
+          </a>
+        </div>
+
+        <div style={styles.passwordBox}>
+          <input
+            type={showPassword ? 'text' : 'password'}
+            style={styles.input}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button type="button" style={styles.eyeButton} onClick={togglePasswordVisibility}>
+            {showPassword ? '🙈' : '👁️'}
+          </button>
+        </div>
+
+        <button style={styles.loginBtn} onClick={handleLogin}>
+          Login
+        </button>
+
+        <div style={styles.signupText}>
+          Don't have an account?
+          <a href="/signup" style={styles.signupLink}>
+            Sign up
+          </a>
         </div>
       </div>
     </div>
