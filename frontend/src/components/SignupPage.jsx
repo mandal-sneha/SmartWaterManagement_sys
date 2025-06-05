@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const SignUpPage = () => {
   const [username, setUsername] = useState('');
+  const [userID, setuserID] = useState('');
   const [email, setEmail] = useState('');
   const [aadharId, setAadharId] = useState('');
   const [password, setPassword] = useState('');
@@ -10,7 +11,7 @@ const SignUpPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleSignUp = () => {
-    if (!username || !email || !aadharId || !password || !confirmPassword) {
+    if (!username || !userID || !email || !aadharId || !password || !confirmPassword) {
       alert('Please fill in all fields');
       return;
     }
@@ -22,7 +23,7 @@ const SignUpPage = () => {
       alert('Please enter a valid 12-digit Aadhaar number');
       return;
     }
-    // alert(`Signing up with\nUsername: ${username}\nEmail: ${email}\nAadhar ID: ${aadharId}\nPassword: ${password}`);
+    // alert(`Signing up with\nUsername: ${username}\nuserID: ${userID}\nEmail: ${email}\nAadhar ID: ${aadharId}\nPassword: ${password}`);
   };
 
   const togglePasswordVisibility = () => {
@@ -167,6 +168,14 @@ const SignUpPage = () => {
         />
 
         <label style={styles.label}>userID</label>
+        <input
+          type="userID"
+          style={styles.input}
+          value={userID}
+          onChange={(e) => setuserID(e.target.value)}
+        />
+
+        <label style={styles.label}>Email</label>
         <input
           type="email"
           style={styles.input}

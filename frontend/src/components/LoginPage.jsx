@@ -31,7 +31,7 @@ const LoginPage = () => {
       padding: '20px',
       boxSizing: 'border-box',
       flexDirection: 'column',
-      // background: 'linear-gradient(135deg, #6e8efb, #a777e3)',
+      // background: 'linear-gradient(135deg, #6e8efb, #a777e3)',    
     },
     title: {
       fontFamily: "'Poppins', sans-serif",
