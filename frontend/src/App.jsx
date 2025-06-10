@@ -5,6 +5,8 @@ import UserDashboard from './components/UserDashboard';
 import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ProtectedRoute from './ProtectedRoute';
+import DashboardHome from './components/dashboardcomponents/DashboardHome.jsx';
+import WaterRegistration from './components/dashboardcomponents/WaterRegistration.jsx';
 
 const App = () => {
   return (
@@ -20,7 +22,10 @@ const App = () => {
               <UserDashboard />
             </ProtectedRoute>
           }
-        />
+        >
+          <Route index element={<DashboardHome />} />
+          <Route path="water-registration" element={<WaterRegistration />} />
+        </Route>
       </Routes>
     </Router>
   );

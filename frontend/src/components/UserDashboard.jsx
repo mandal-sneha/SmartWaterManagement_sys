@@ -4,23 +4,21 @@ import {
   FiUsers,
   FiPackage,
   FiBarChart2,
-  FiDroplet,
-  FiFileText,
-  FiTruck,
-  FiCreditCard,
-  FiMenu,
-  FiX,
   FiMoon,
-  FiSun
+  FiSun,
+  FiChevronLeft,
+  FiChevronRight,
+  FiUser
 } from 'react-icons/fi';
-
+import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 
 const UserDashboard = () => {
-  const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
   const [userData, setUserData] = useState({ userName: '', userId: '' });
+  const navigate = useNavigate();
+  const { userid } = useParams();
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -48,27 +46,18 @@ const UserDashboard = () => {
     : 'linear-gradient(to bottom, #6e8efb, #a777e3)';
 
   const styles = {
-    pageWrapper: {
-      background: darkMode ? '#12121c' : 'linear-gradient(to right, #dfe9f3, #e7d9f8)',
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '30px 10px',
-      fontFamily: "'Poppins', sans-serif",
-      color: textColor,
-    },
     mainContainer: {
       display: 'flex',
       flexDirection: 'row',
-      height: '100%',
-      width: '100%',
-      maxWidth: '1800px',
-      borderRadius: '5px',
+      height: '100vh',
+      width: '100vw',
+      borderRadius: '0',
       overflow: 'hidden',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
       backgroundColor: cardBg,
       position: 'relative',
+      fontFamily: "'Poppins', sans-serif",
+      color: textColor,
     },
     sidebar: {
       width: sidebarOpen ? '260px' : '0',
@@ -80,17 +69,19 @@ const UserDashboard = () => {
       flexShrink: 0,
       transition: 'width 0.3s ease',
       gap: '8px',
+      justifyContent: 'space-between',
     },
     toggleBtn: {
       position: 'absolute',
       top: '20px',
-      left: '20px',
+      left: sidebarOpen ? '270px' : '20px',
       zIndex: 1000,
       cursor: 'pointer',
       fontSize: '24px',
       color: textColor,
       background: 'transparent',
       border: 'none',
+      transition: 'left 0.3s ease',
     },
     themeToggle: {
       position: 'absolute',
@@ -112,13 +103,25 @@ const UserDashboard = () => {
       borderRadius: '6px',
       transition: 'all 0.2s ease',
       fontWeight: '500',
-      ':hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      },
     },
     icon: {
       marginRight: '15px',
       fontSize: '20px',
+    },
+    sidebarFooter: {
+      marginTop: 'auto',
+      paddingTop: '20px',
+      fontSize: '16px',
+      fontWeight: 'bold',
+      color: '#ffffff',
+      textAlign: 'center',
+      display: sidebarOpen ? 'flex' : 'none',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: darkMode ? '#4a4a6a' : '#cdb8f2',
+      borderRadius: '12px',
+      padding: '10px',
+      gap: '10px',
     },
     mainPage: {
       flexGrow: 1,
@@ -138,155 +141,46 @@ const UserDashboard = () => {
       fontSize: '26px',
       fontWeight: 600,
     },
-    userIconBox: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '10px',
-      backgroundColor: darkMode ? '#3a3a5e' : '#eee6fb',
-      padding: '8px 12px',
-      borderRadius: '20px',
-    },
-    userIcon: {
-      width: '35px',
-      height: '35px',
-      borderRadius: '50%',
-      backgroundColor: '#a777e3',
-    },
-    welcomeText: {
-      fontSize: '14px',
-      fontWeight: '500',
-      color: textColor,
-    },
-    cardsGrid: {
-      display: 'grid',
-      gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: '40px',
-    },
-    card: {
-      backgroundColor: cardBg,
-      padding: '30px',
-      borderRadius: '12px',
-      boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      minHeight: '200px',
-    },
-    cardHeader: {
-      display: 'flex',
-      alignItems: 'center',
-      marginBottom: '20px',
-    },
-    cardIcon: {
-      fontSize: '28px',
-      marginRight: '12px',
-      color: '#6e8efb',
-    },
-    cardTitle: {
-      fontSize: '18px',
-      fontWeight: 600,
-    },
-    cardText: {
-      fontSize: '16px',
-      marginTop: '10px',
-      lineHeight: '1.5',
-    },
-    payButton: {
-      marginTop: '25px',
-      padding: '12px 20px',
-      backgroundImage: 'linear-gradient(to right, #6e8efb, #a777e3)',
-      border: 'none',
-      borderRadius: '6px',
-      color: '#fff',
-      cursor: 'pointer',
-      fontWeight: 'bold',
-      fontSize: '15px',
-      alignSelf: 'flex-start',
-    },
   };
 
   return (
-    <div style={styles.pageWrapper}>
-      <div style={styles.mainContainer}>
-        <button onClick={toggleSidebar} style={styles.toggleBtn}>
-          {sidebarOpen ? <FiX /> : <FiMenu />}
-        </button>
-        <button onClick={toggleDarkMode} style={styles.themeToggle}>
-          {darkMode ? <FiSun /> : <FiMoon />}
-        </button>
+    <div style={styles.mainContainer}>
+      <button onClick={toggleSidebar} style={styles.toggleBtn}>
+        {sidebarOpen ? <FiChevronLeft /> : <FiChevronRight />}
+      </button>
+      <button onClick={toggleDarkMode} style={styles.themeToggle}>
+        {darkMode ? <FiSun /> : <FiMoon />}
+      </button>
 
-        {/* Sidebar */}
-        <div style={styles.sidebar}>
-          <div style={styles.menuItem}>
+      <div style={styles.sidebar}>
+        <div>
+          <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}`)}>
             <span style={styles.icon}>🏠</span> Dashboard
           </div>
-          <div style={styles.menuItem} onClick={() => setActivePage('register')}>
+          <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/water-registration`)}>
             <FiPlus style={styles.icon} /> Register for Water
           </div>
-          <div style={styles.menuItem} onClick={() => setActivePage('members')}>
+          <div style={styles.menuItem}>
             <FiUsers style={styles.icon} /> Manage Members & Guests
           </div>
-          <div style={styles.menuItem} onClick={() => setActivePage('supply')}>
-            <FiPackage style={styles.icon} /> Request Additional Supply
+          <div style={styles.menuItem}>
+            <FiPackage style={styles.icon} /> Add Property
           </div>
-          <div style={styles.menuItem} onClick={() => setActivePage('insights')}>
+          <div style={styles.menuItem}>
             <FiBarChart2 style={styles.icon} /> Usage Insights
           </div>
         </div>
-
-        {/* Main Content */}
-        <div style={styles.mainPage}>
-          <div style={styles.topBar}>
-            <div>
-              <h2 style={styles.header}>Smart Water Dashboard</h2>
-              <p style={styles.welcomeText}>Welcome, {userData.userName || 'Guest'}</p>
-            </div>
-            <div style={styles.userIconBox}>
-              <div style={styles.userIcon}></div>
-              <span>{userData.userId || 'N/A'}</span>
-            </div>
-          </div>
-
-          <div style={styles.cardsGrid}>
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <FiDroplet style={styles.cardIcon} />
-                <h3 style={styles.cardTitle}>Current Usage</h3>
-              </div>
-              <p style={styles.cardText}>Water used this week: 1200L</p>
-              <p style={styles.cardText}>Daily average: 170L</p>
-              <p style={styles.cardText}>Remaining quota: 300L</p>
-            </div>
-
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <FiFileText style={styles.cardIcon} />
-                <h3 style={styles.cardTitle}>Outstanding Bill</h3>
-              </div>
-              <p style={styles.cardText}>Due Amount: ₹650</p>
-              <p style={styles.cardText}>Due Date: 15th June</p>
-              <p style={styles.cardText}>Status: Unpaid</p>
-            </div>
-
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <FiTruck style={styles.cardIcon} />
-                <h3 style={styles.cardTitle}>Upcoming Supply</h3>
-              </div>
-              <p style={styles.cardText}>Next: 12th June</p>
-              <p style={styles.cardText}>Slot: 10 AM - 12 PM</p>
-              <p style={styles.cardText}>Note: Bring container</p>
-            </div>
-
-            <div style={styles.card}>
-              <div style={styles.cardHeader}>
-                <FiCreditCard style={styles.cardIcon} />
-                <h3 style={styles.cardTitle}>Payment</h3>
-              </div>
-              <button style={styles.payButton}>Pay Now</button>
-            </div>
-          </div>
+        <div style={styles.sidebarFooter}>
+          <FiUser />
+          <span style={{ fontSize: '17px' }}>{userData.userName || 'Guest'}</span>
         </div>
+      </div>
+
+      <div style={styles.mainPage}>
+        <div style={styles.topBar}>
+          <h2 style={styles.header}>Smart Water Dashboard</h2>
+        </div>
+        <Outlet />
       </div>
     </div>
   );
