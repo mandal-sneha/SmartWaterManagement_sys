@@ -13,13 +13,9 @@ const userSchema = new mongoose.Schema({
         required: true
     },
 
-    houseNo: {
-        type: String
-    },
-
     userProfilePhoto: {
         type: String,
-        required: false
+        required: true
     },
 
     adhaarNumber: {
@@ -48,9 +44,16 @@ const userSchema = new mongoose.Schema({
         required: false
     },
 
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        trim: true
+    },
+
     embeddingVector: {
         type: [],
-        required: false 
+        required: true 
     }
 
 }, { timestamps: true });

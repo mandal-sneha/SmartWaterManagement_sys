@@ -1,197 +1,135 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { axiosInstance } from '../lib/axios.js';
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    alert(`Logging in with\nEmail: ${email}\nPassword: ${password}`);
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    
+    if (!identifier || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await axiosInstance.post('/user/login', {
+        identifier: identifier.trim(),
+        password: password
+      });
+
+      if (response.data.success) {
+        const userData = {
+          userName: response.data.user.userName || response.data.user.username,
+          userId: response.data.user.userId,
+          email: response.data.user.email,
+          adhaarNumber: response.data.user.adhaarNumber
+        };
+        
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        
+        alert('Login successful!');
+        window.location.href = `/u/${response.data.user.userId}`;
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  // Load Google Font dynamically
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Italiana&display=swap';
-    link.href = 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap';
-    link.rel = 'stylesheet';
-    document.head.appendChild(link);
-  }, []);
-
-  const styles = {
-    container: {
-      minHeight: '100vh',
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: '20px',
-      boxSizing: 'border-box',
-      flexDirection: 'column',
-      // background: 'linear-gradient(135deg, #6e8efb, #a777e3)',    
-    },
-    title: {
-      fontFamily: "'Poppins', sans-serif",
-      fontSize: '32px',
-      fontWeight: '700',
-      color: '#4b0082',
-      marginBottom: '8px',
-      textAlign: 'center',
-    },
-    subtitle: {
-      fontFamily: "'Poppins', sans-serif",
-      fontSize: '16px',
-      color: '#555',
-      marginBottom: '30px',
-      textAlign: 'center',
-    },
-    formBox: {
-      backgroundColor: 'rgba(255, 255, 255, 0.5)', // Semi-transparent
-      padding: '30px 25px',
-      borderRadius: '10px',
-      boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-      width: '100%',
-      maxWidth: '390px',
-      boxSizing: 'border-box',
-    },
-    heading: {
-      // fontSize: '26px',
-      // fontWeight: 'bold',
-      marginBottom: '10px',
-      textAlign: 'center',
-      fontFamily: "'Poppins', sans-serif",
-      fontSize: '28px',
-      fontWeight: '500',
-      color: '#4b0082',
-      letterSpacing: '1px',
-    },
-    subheading: {
-      fontSize: '14px',
-      color: '#555',
-      marginBottom: '20px',
-      textAlign: 'center',
-      fontFamily: "'Poppins', sans-serif",
-    },
-    input: {
-      width: '100%',
-      padding: '10px',
-      marginBottom: '15px',
-      borderRadius: '6px',
-      border: '1px solid #ccc',
-      fontSize: '14px',
-      boxSizing: 'border-box',
-    },
-    passwordBox: {
-      position: 'relative',
-      
-    },
-    eyeButton: {
-      position: 'absolute',
-      top: '50%',
-      right: '10px',
-      transform: 'translateY(-50%)',
-      background: 'none',
-      border: 'none',
-      cursor: 'pointer',
-      fontSize: '16px',
-    },
-    label: {
-      display: 'block',
-      textAlign: 'left',
-      fontSize: '14px',
-      marginBottom: '5px',
-      fontFamily: "'Poppins', sans-serif",
-    },
-    forgotBox: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      fontSize: '13px',
-      marginTop: '-10px',
-      marginBottom: '10px',
-    },
-    forgotLink: {
-      textDecoration: 'none',
-      color: '#1230AE',
-      fontFamily: "'Poppins', sans-serif",
-    },
-    loginBtn: {
-      width: '100%',
-      padding: '12px',
-      backgroundImage: 'linear-gradient(to right, #6e8efb, #a777e3)',
-      color: '#fff',
-      border: 'none',
-      borderRadius: '6px',
-      fontSize: '15px',
-      fontFamily: "'Poppins', sans-serif",
-      cursor: 'pointer',
-      marginTop: '10px',
-    },
-    signupText: {
-      marginTop: '25px',
-      fontSize: '14px',
-      textAlign: 'center',
-      fontFamily: "'Poppins', sans-serif",
-    },
-    signupLink: {
-      color: '#1230AE',
-      textDecoration: 'underline',
-      marginLeft: '4px',
-      fontFamily: "'Poppins', sans-serif",
-    },
-  };
-
   return (
-    <div style={styles.container}>
-      <h1 style={styles.title}>Welcome to HydraOne</h1>
-      <p style={styles.subtitle}>One-stop water resource</p>
-      
-      <div style={styles.formBox}>
-        <div style={styles.heading}>LOG IN</div>
-        <div style={styles.subheading}>
-          Enter your userID below to login to your account
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-100">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-indigo-800 mb-2 font-poppins">Welcome to HydraOne</h1>
+          <p className="text-gray-600">One-stop water resource</p>
         </div>
+        
+        <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-xl shadow-lg">
+          <div className="text-center mb-6">
+            <h2 className="text-2xl font-semibold text-indigo-800 mb-2 tracking-wide">LOG IN</h2>
+          </div>
 
-        <label style={styles.label}>userID</label>
-        <input
-          type="email"
-          // placeholder="m@example.com"
-          style={styles.input}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+          <form onSubmit={handleLogin} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md text-sm">
+                {error}
+              </div>
+            )}
 
-        <div style={styles.forgotBox}>
-          <label style={styles.label}>Password</label>
-          <a href="#" style={styles.forgotLink}>
-            Forgot password?
-          </a>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email or UserID
+              </label>
+              <input
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Enter email or userID"
+                disabled={loading}
+              />
+            </div>
 
-        <div style={styles.passwordBox}>
-          <input
-            type={showPassword ? 'text' : 'password'}
-            style={styles.input}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <button type="button" style={styles.eyeButton} onClick={togglePasswordVisibility}>
-            {showPassword ? '🙈' : '👁️'}
-          </button>
-        </div>
+            <div>
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <a href="#" className="text-sm text-indigo-600 hover:text-indigo-500">
+                  Forgot password?
+                </a>
+              </div>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  placeholder="Enter password"
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={togglePasswordVisibility}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  disabled={loading}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
 
-        <button style={styles.loginBtn} onClick={handleLogin}>
-          Login
-        </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 px-4 rounded-md font-medium hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Logging in...' : 'Login'}
+            </button>
+          </form>
 
-        <div style={styles.signupText}>
-          Don't have an account?
-          <a href="/signup" style={styles.signupLink}>
-            Sign up
-          </a>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <a href="/signup" className="text-indigo-600 hover:text-indigo-500 underline font-medium">
+                Sign up
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
