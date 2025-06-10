@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   FiPlus,
   FiUsers,
@@ -14,10 +14,28 @@ import {
   FiSun
 } from 'react-icons/fi';
 
+import { axiosInstance } from '../lib/axios';
+
 const UserDashboard = () => {
   const [activePage, setActivePage] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
+  const [userData, setUserData] = useState({ userName: '', userId: '' });
+
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUserData({
+          userName: parsedUser.userName || '',
+          userId: parsedUser.userId || '',
+        });
+      } catch (err) {
+        console.error('Error parsing user from localStorage', err);
+      }
+    }
+  }, []);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleDarkMode = () => setDarkMode(!darkMode);
@@ -43,15 +61,14 @@ const UserDashboard = () => {
     mainContainer: {
       display: 'flex',
       flexDirection: 'row',
-      height:'100%',
+      height: '100%',
       width: '100%',
       maxWidth: '1800px',
-      height: '90vh',
       borderRadius: '5px',
       overflow: 'hidden',
       boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
       backgroundColor: cardBg,
-      position: 'relative'
+      position: 'relative',
     },
     sidebar: {
       width: sidebarOpen ? '260px' : '0',
@@ -62,7 +79,7 @@ const UserDashboard = () => {
       flexDirection: 'column',
       flexShrink: 0,
       transition: 'width 0.3s ease',
-      gap: '8px', // Added gap between menu items
+      gap: '8px',
     },
     toggleBtn: {
       position: 'absolute',
@@ -87,21 +104,21 @@ const UserDashboard = () => {
       border: 'none',
     },
     menuItem: {
-      padding: '18px 15px', // Increased padding
-      fontSize: '16px', // Increased font size
+      padding: '18px 15px',
+      fontSize: '16px',
       cursor: 'pointer',
       display: sidebarOpen ? 'flex' : 'none',
       alignItems: 'center',
-      borderRadius: '6px', // Added border radius
+      borderRadius: '6px',
       transition: 'all 0.2s ease',
-      fontWeight: '500', // Added font weight
+      fontWeight: '500',
       ':hover': {
-        backgroundColor: 'rgba(255, 255, 255, 0.15)', // Hover effect
+        backgroundColor: 'rgba(255, 255, 255, 0.15)',
       },
     },
     icon: {
-      marginRight: '15px', // Increased spacing
-      fontSize: '20px', // Increased icon size
+      marginRight: '15px',
+      fontSize: '20px',
     },
     mainPage: {
       flexGrow: 1,
@@ -222,11 +239,11 @@ const UserDashboard = () => {
           <div style={styles.topBar}>
             <div>
               <h2 style={styles.header}>Smart Water Dashboard</h2>
-              <p style={styles.welcomeText}>Welcome, Sneha Mandal</p>
+              <p style={styles.welcomeText}>Welcome, {userData.userName || 'Guest'}</p>
             </div>
             <div style={styles.userIconBox}>
               <div style={styles.userIcon}></div>
-              <span>Username</span>
+              <span>{userData.userId || 'N/A'}</span>
             </div>
           </div>
 
