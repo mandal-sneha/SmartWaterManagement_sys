@@ -1,11 +1,13 @@
 import { User } from "../models/user.model.js";
-import bcrypt from "bcryptjs";
+import { Family } from '../models/family.model.js';
 import { generateToken } from "../utils/generate.token.js";
 import { axiosInstance } from "../lib/axios.js";
-import FormData from "form-data";
 import { v2 as cloudinary } from "cloudinary";
+import FormData from "form-data";
 import dotenv from "dotenv";
 import streamifier from "streamifier";
+import moment from 'moment-timezone';
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -24,7 +26,6 @@ const uploadToCloudinary = (file) => {
         resolve(result.secure_url);
       }
     );
-    
     streamifier.createReadStream(file.data).pipe(uploadStream);
   });
 };
@@ -33,13 +34,12 @@ export const userSignup = async (req, res) => {
   try {
     const { username, userId, password, email, adhaarNumber } = req.body;
     const imageFile = req.files?.image;
-    
+
     if (!imageFile) {
       return res.status(400).json({ success: false, message: "Image is required" });
     }
-    
-    const hashedPassword = await bcrypt.hash(password, 10);
 
+    const hashedPassword = await bcrypt.hash(password, 10);
     const imageUrl = await uploadToCloudinary(imageFile);
 
     const form = new FormData();
@@ -47,7 +47,7 @@ export const userSignup = async (req, res) => {
       filename: imageFile.name,
       contentType: imageFile.mimetype
     });
-    
+
     const flaskRes = await axiosInstance.post("/extract-embedding", form, {
       headers: {
         ...form.getHeaders(),
@@ -55,9 +55,9 @@ export const userSignup = async (req, res) => {
       },
       timeout: 30000 
     });
-    
+
     const embedding = flaskRes.data.embedding;
-    
+
     const newUser = new User({
       userName: username,
       userId: userId,
@@ -86,14 +86,12 @@ export const userSignup = async (req, res) => {
     });
   } catch (error) {
     console.error('Signup error:', error);
-    
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
         message: "Face recognition service unavailable"
       });
     }
-    
     res.status(500).json({
       success: false,
       message: "Error registering user",
@@ -106,7 +104,6 @@ export const userLogin = async (req, res) => {
   try {
     const { identifier, password } = req.body;
     let user;
-    
     if (identifier.includes('@')) {
       user = await User.findOne({ email: identifier });
     } else {
@@ -121,7 +118,6 @@ export const userLogin = async (req, res) => {
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    
     if (!isPasswordValid) {
       return res.status(401).json({ 
         success: false, 
@@ -138,8 +134,6 @@ export const userLogin = async (req, res) => {
         username: user.userName,
         userId: user.userId,
         email: user.email,
-        adhaarNumber: user.adhaarNumber,
-        profilePhoto: user.userProfilePhoto
       },
       token
     });
@@ -152,9 +146,295 @@ export const userLogin = async (req, res) => {
   }
 };
 
-export const userLogout = (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Logged out successfully. Please clear the token from localStorage."
-  });
+// Helper function to safely convert Mongoose Map to Object
+const convertMapToObject = (mapData) => {
+  if (!mapData) return {};
+  
+  // If it's already a plain object
+  if (mapData.constructor === Object) {
+    return mapData;
+  }
+  
+  // If it's a Mongoose Map
+  if (mapData instanceof Map) {
+    return Object.fromEntries(mapData);
+  }
+  
+  // If it has toObject method (Mongoose document)
+  if (typeof mapData.toObject === 'function') {
+    return mapData.toObject();
+  }
+  
+  // If it has entries method
+  if (typeof mapData.entries === 'function') {
+    return Object.fromEntries(mapData.entries());
+  }
+  
+  return {};
+};
+
+// Helper function to parse date strings flexibly
+const parseDate = (dateStr) => {
+  if (!dateStr) return null;
+  
+  // Try different date formats
+  const formats = [
+    'YYYY-MM-DD',
+    'MM-DD-YYYY',
+    'DD-MM-YYYY',
+    'YYYY/MM/DD',
+    'MM/DD/YYYY',
+    'DD/MM/YYYY',
+    moment.ISO_8601
+  ];
+  
+  for (const format of formats) {
+    const date = moment(dateStr, format, true);
+    if (date.isValid()) {
+      return date;
+    }
+  }
+  
+  // Last resort - let moment try to parse it
+  const date = moment(dateStr);
+  return date.isValid() ? date : null;
+};
+
+export const fetchDashboardDetails = async (req, res) => {
+  try {
+    const { userid } = req.params; 
+    
+    // Handle missing userid
+    if (!userid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "User ID is required" 
+      });
+    }
+    
+    const user = await User.findOne({ userId: userid }); 
+    console.log('User found:', user ? 'Yes' : 'No');
+    
+    if (!user) {
+      console.log('User not found with userId:', userid);
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found" 
+      });
+    }
+
+    // Handle case where user has no waterId
+    if (!user.waterId) {
+      console.log('User has no waterId, returning hasWaterId: false');
+      return res.status(200).json({ 
+        success: true,
+        hasWaterId: false 
+      });
+    }
+
+    // Parse waterId safely
+    const waterIdParts = user.waterId.split('_');
+    if (waterIdParts.length < 2) {
+      console.log('Invalid waterId format:', user.waterId);
+      return res.status(200).json({ 
+        success: true,
+        hasWaterId: false 
+      });
+    }
+
+    const [rootId, tenantCode] = waterIdParts;
+    
+    // Handle missing rootId or tenantCode
+    if (!rootId || !tenantCode) {
+      console.log('Missing rootId or tenantCode');
+      return res.status(200).json({ 
+        success: true,
+        hasWaterId: false 
+      });
+    }
+
+    const family = await Family.findOne({ rootId, tenantCode });
+    
+    if (!family) {
+      console.log('Family not found for rootId:', rootId, 'tenantCode:', tenantCode);
+      // Return empty dashboard instead of error
+      return res.status(200).json({
+        success: true,
+        hasWaterId: true,
+        waterUsedThisMonth: 0,
+        waterUsedThisWeek: 0,
+        guestsThisMonth: 0,
+        billThisMonth: 0,
+        lastMonthBill: 0,
+        billStatus: "paid",
+        dueDate: new Date().toISOString().split('T')[0],
+        nextSupplyTime: "8 AM",
+        hoursUntilNext: 0
+      });
+    }
+
+    console.log('Family document found:', {
+      rootId: family.rootId,
+      tenantCode: family.tenantCode,
+      waterUsageType: typeof family.waterUsage,
+      guestType: typeof family.numberOfGuests,
+      rawWaterUsage: family.waterUsage,
+      rawGuests: family.numberOfGuests
+    });
+
+    const now = moment().tz("Asia/Kolkata");
+    const currentMonth = now.format("YYYY-MM");
+    const currentWeekStart = now.clone().startOf("week");
+    const lastMonth = now.clone().subtract(1, 'month').format("YYYY-MM");
+
+    console.log('Date calculations:', {
+      currentTime: now.format('YYYY-MM-DD HH:mm:ss'),
+      currentMonth,
+      lastMonth,
+      currentWeekStart: currentWeekStart.format('YYYY-MM-DD')
+    });
+
+    let waterUsedThisMonth = 0;
+    let waterUsedThisWeek = 0;
+    let lastMonthWaterUsage = 0;
+    
+    // Process water usage data
+    if (family.waterUsage) {
+      try {
+        const usageData = convertMapToObject(family.waterUsage);
+        console.log('Converted water usage data:', usageData);
+        
+        for (const [dateStr, usage] of Object.entries(usageData)) {
+          if (!dateStr || (!usage && usage !== 0)) continue;
+          
+          const usageValue = Number(usage);
+          if (isNaN(usageValue)) continue;
+          
+          const date = parseDate(dateStr);
+          if (!date) {
+            console.log(`Invalid date format: ${dateStr}`);
+            continue;
+          }
+          
+          console.log(`Processing date: ${dateStr}, usage: ${usageValue}, parsed date: ${date.format('YYYY-MM-DD')}, month: ${date.format("YYYY-MM")}`);
+          
+          if (date.format("YYYY-MM") === currentMonth) {
+            waterUsedThisMonth += usageValue;
+          }
+          if (date.isSameOrAfter(currentWeekStart, 'day')) {
+            waterUsedThisWeek += usageValue;
+          }
+          if (date.format("YYYY-MM") === lastMonth) {
+            lastMonthWaterUsage += usageValue;
+          }
+        }
+      } catch (error) {
+        console.error('Error processing waterUsage:', error);
+        // Continue with default values
+      }
+    }
+
+    let guestsThisMonth = 0;
+    if (family.numberOfGuests) {
+      try {
+        const guestData = convertMapToObject(family.numberOfGuests);
+        
+        for (const [dateStr, guestCount] of Object.entries(guestData)) {
+          if (!dateStr || (!guestCount && guestCount !== 0)) continue;
+          
+          const guestValue = Number(guestCount);
+          if (isNaN(guestValue)) continue;
+          
+          const date = parseDate(dateStr);
+          if (!date) {
+            continue;
+          }
+                    
+          if (date.format("YYYY-MM") === currentMonth) {
+            guestsThisMonth += guestValue;
+          }
+        }
+      } catch (error) {
+        console.error('Error processing numberOfGuests:', error);
+      }
+    }
+
+    const billThisMonth = Math.max(0, Math.round(waterUsedThisMonth * 10));
+    const lastMonthBill = Math.max(0, Math.round(lastMonthWaterUsage * 10));
+    
+    // Set due date to 5th of current month
+    let dueDate;
+    try {
+      dueDate = `${now.format('YYYY')}-${now.format('MM')}-05`;
+    } catch (error) {
+      dueDate = new Date().toISOString().split('T')[0];
+    }
+
+    // Calculate next supply time
+    const supplyTimes = [
+      { time: '08:00', display: '8 AM' },
+      { time: '12:00', display: '12 PM' },
+      { time: '15:00', display: '3 PM' }
+    ];
+    
+    const currentHour = now.hour();
+    const currentMinute = now.minute();
+    const currentTimeInMinutes = currentHour * 60 + currentMinute;
+    
+    let nextSupplyTime = '8 AM';
+    let hoursUntilNext = 0;
+
+    try {
+      let foundNext = false;
+      
+      for (let supply of supplyTimes) {
+        const [hour, minute] = supply.time.split(':').map(Number);
+        const supplyTimeInMinutes = hour * 60 + minute;
+        
+        if (currentTimeInMinutes < supplyTimeInMinutes) {
+          nextSupplyTime = supply.display;
+          const minutesUntilNext = supplyTimeInMinutes - currentTimeInMinutes;
+          hoursUntilNext = Math.max(1, Math.ceil(minutesUntilNext / 60));
+          foundNext = true;
+          break;
+        }
+      }
+
+      if (!foundNext) {
+        nextSupplyTime = '8 AM (Tomorrow)';
+        const tomorrow8AM = now.clone().add(1, 'day').startOf('day').add(8, 'hours');
+        hoursUntilNext = Math.ceil(tomorrow8AM.diff(now, 'minutes') / 60);
+      }
+    } catch (error) {
+      console.error('Error calculating next supply time:', error);
+      nextSupplyTime = '8 AM';
+      hoursUntilNext = 0;
+    }
+
+    const responseData = {
+      success: true,
+      hasWaterId: true,
+      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100, // Round to 2 decimal places
+      waterUsedThisWeek: Math.round(waterUsedThisWeek * 100) / 100,
+      guestsThisMonth: guestsThisMonth,
+      billThisMonth: billThisMonth,
+      lastMonthBill: lastMonthBill,
+      billStatus: "paid", 
+      dueDate: dueDate,
+      nextSupplyTime: nextSupplyTime,
+      hoursUntilNext: hoursUntilNext
+    };
+
+
+    res.status(200).json(responseData);
+
+  } catch (error) {
+    console.error('Error fetching dashboard details:', error);
+    
+    res.status(500).json({ 
+      success: false,
+      message: "Internal server error while fetching dashboard data",
+      error: error.message
+    });
+  }
 };

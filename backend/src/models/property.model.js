@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const propertySchema = new mongoose.Schema({
+    propertyName: {
+        type: String,
+        required: true
+    },
+
     rootId: {
         type: String,
         required: true,

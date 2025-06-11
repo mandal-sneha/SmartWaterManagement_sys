@@ -11,7 +11,6 @@ import {
   FiUser
 } from 'react-icons/fi';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
-import { axiosInstance } from '../lib/axios';
 
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);

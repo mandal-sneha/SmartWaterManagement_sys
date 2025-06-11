@@ -34,14 +34,9 @@ const userSchema = new mongoose.Schema({
         required: false
     },
 
-    isTenant: {
-        type: Boolean,
-        required: false
-    },
-
     waterId: {
         type: String,
-        required: false
+        required: false,
     },
 
     email: {
@@ -54,7 +49,7 @@ const userSchema = new mongoose.Schema({
     embeddingVector: {
         type: [],
         required: true 
-    }
+    },
 
 }, { timestamps: true });
 
