@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, createContext, useContext } from 'react';
 import {
   FiPlus,
   FiUsers,
@@ -11,10 +11,54 @@ import {
   FiUser
 } from 'react-icons/fi';
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
+import { axiosInstance } from '../lib/axios';
+
+// Create Theme Context
+export const ThemeContext = createContext();
+
+// Theme Provider Component
+export const ThemeProvider = ({ children, darkMode, toggleDarkMode }) => {
+  const themeConfig = {
+    darkMode,
+    toggleDarkMode,
+    colors: {
+      baseColor: darkMode ? '#1f1f2e' : '#f8f6ff',
+      textColor: darkMode ? '#ffffff' : '#4b0082',
+      cardBg: darkMode ? '#2a2a3d' : '#ffffff',
+      sidebarBg: darkMode
+        ? 'linear-gradient(to bottom, #23233a, #3a3a5e)'
+        : 'linear-gradient(to bottom, #6e8efb, #a777e3)',
+      primaryBg: darkMode ? '#3a3a5e' : '#6e8efb',
+      secondaryBg: darkMode ? '#4a4a6a' : '#cdb8f2',
+      hoverBg: darkMode ? '#4a4a6a' : 'rgba(255, 255, 255, 0.2)',
+      borderColor: darkMode ? '#4a4a6a' : '#e0e0e0',
+      mutedText: darkMode ? '#a0a0a0' : '#666666'
+    }
+  };
+
+  return (
+    <ThemeContext.Provider value={themeConfig}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};
+
+// Custom hook to use theme
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
 
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Initialize dark mode from localStorage or default to false
+    const savedTheme = localStorage.getItem('darkMode');
+    return savedTheme ? JSON.parse(savedTheme) : false;
+  });
   const [userData, setUserData] = useState({ userName: '', userId: '' });
   const navigate = useNavigate();
   const { userid } = useParams();
@@ -33,6 +77,11 @@ const UserDashboard = () => {
       }
     }
   }, []);
+
+  // Save theme preference to localStorage
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(darkMode));
+  }, [darkMode]);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleDarkMode = () => setDarkMode(!darkMode);
@@ -92,6 +141,9 @@ const UserDashboard = () => {
       color: textColor,
       background: 'transparent',
       border: 'none',
+      padding: '8px',
+      borderRadius: '50%',
+      transition: 'all 0.2s ease',
     },
     menuItem: {
       padding: '18px 15px',
@@ -143,45 +195,51 @@ const UserDashboard = () => {
   };
 
   return (
-    <div style={styles.mainContainer}>
-      <button onClick={toggleSidebar} style={styles.toggleBtn}>
-        {sidebarOpen ? <FiChevronLeft /> : <FiChevronRight />}
-      </button>
-      <button onClick={toggleDarkMode} style={styles.themeToggle}>
-        {darkMode ? <FiSun /> : <FiMoon />}
-      </button>
+    <ThemeProvider darkMode={darkMode} toggleDarkMode={toggleDarkMode}>
+      <div style={styles.mainContainer}>
+        <button onClick={toggleSidebar} style={styles.toggleBtn}>
+          {sidebarOpen ? <FiChevronLeft /> : <FiChevronRight />}
+        </button>
+        <button 
+          onClick={toggleDarkMode} 
+          style={styles.themeToggle}
+          title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+        >
+          {darkMode ? <FiSun /> : <FiMoon />}
+        </button>
 
-      <div style={styles.sidebar}>
-        <div>
-          <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}`)}>
-            <span style={styles.icon}>🏠</span> Dashboard
+        <div style={styles.sidebar}>
+          <div>
+            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}`)}>
+              <span style={styles.icon}>🏠</span> Dashboard
+            </div>
+            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/water-registration`)}>
+              <FiPlus style={styles.icon} /> Register for Water
+            </div>
+            <div style={styles.menuItem}>
+              <FiUsers style={styles.icon} /> Manage Members & Guests
+            </div>
+            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/add-property`)}>
+              <FiPackage style={styles.icon} /> Add Property
+            </div>
+            <div style={styles.menuItem}>
+              <FiBarChart2 style={styles.icon} /> Usage Insights
+            </div>
           </div>
-          <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/water-registration`)}>
-            <FiPlus style={styles.icon} /> Register for Water
-          </div>
-          <div style={styles.menuItem}>
-            <FiUsers style={styles.icon} /> Manage Members & Guests
-          </div>
-          <div style={styles.menuItem}>
-            <FiPackage style={styles.icon} /> Add Property
-          </div>
-          <div style={styles.menuItem}>
-            <FiBarChart2 style={styles.icon} /> Usage Insights
+          <div style={styles.sidebarFooter}>
+            <FiUser />
+            <span style={{ fontSize: '17px' }}>{userData.userName || 'Guest'}</span>
           </div>
         </div>
-        <div style={styles.sidebarFooter}>
-          <FiUser />
-          <span style={{ fontSize: '17px' }}>{userData.userName || 'Guest'}</span>
+
+        <div style={styles.mainPage}>
+          <div style={styles.topBar}>
+            <h2 style={styles.header}>Smart Water Dashboard</h2>
+          </div>
+          <Outlet />
         </div>
       </div>
-
-      <div style={styles.mainPage}>
-        <div style={styles.topBar}>
-          <h2 style={styles.header}>Smart Water Dashboard</h2>
-        </div>
-        <Outlet />
-      </div>
-    </div>
+    </ThemeProvider>
   );
 };
 
