@@ -13,10 +13,8 @@ import {
 import { Outlet, useNavigate, useParams } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 
-// Create Theme Context
 export const ThemeContext = createContext();
 
-// Theme Provider Component
 export const ThemeProvider = ({ children, darkMode, toggleDarkMode }) => {
   const themeConfig = {
     darkMode,
@@ -43,7 +41,6 @@ export const ThemeProvider = ({ children, darkMode, toggleDarkMode }) => {
   );
 };
 
-// Custom hook to use theme
 export const useTheme = () => {
   const context = useContext(ThemeContext);
   if (!context) {
@@ -55,7 +52,6 @@ export const useTheme = () => {
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [darkMode, setDarkMode] = useState(() => {
-    // Initialize dark mode from localStorage or default to false
     const savedTheme = localStorage.getItem('darkMode');
     return savedTheme ? JSON.parse(savedTheme) : false;
   });
@@ -78,7 +74,6 @@ const UserDashboard = () => {
     }
   }, []);
 
-  // Save theme preference to localStorage
   useEffect(() => {
     localStorage.setItem('darkMode', JSON.stringify(darkMode));
   }, [darkMode]);

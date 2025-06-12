@@ -34,7 +34,7 @@ const familySchema = new mongoose.Schema({
     },
 
     waterUsage: {
-        type: Map, // date: water used in litre format
+        type: Map,
         of: Number,
         default: {},
         required: false,

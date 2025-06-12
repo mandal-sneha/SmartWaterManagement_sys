@@ -146,26 +146,21 @@ export const userLogin = async (req, res) => {
   }
 };
 
-// Helper function to safely convert Mongoose Map to Object
 const convertMapToObject = (mapData) => {
   if (!mapData) return {};
   
-  // If it's already a plain object
   if (mapData.constructor === Object) {
     return mapData;
   }
   
-  // If it's a Mongoose Map
   if (mapData instanceof Map) {
     return Object.fromEntries(mapData);
   }
   
-  // If it has toObject method (Mongoose document)
   if (typeof mapData.toObject === 'function') {
     return mapData.toObject();
   }
   
-  // If it has entries method
   if (typeof mapData.entries === 'function') {
     return Object.fromEntries(mapData.entries());
   }
@@ -173,11 +168,9 @@ const convertMapToObject = (mapData) => {
   return {};
 };
 
-// Helper function to parse date strings flexibly
 const parseDate = (dateStr) => {
   if (!dateStr) return null;
   
-  // Try different date formats
   const formats = [
     'YYYY-MM-DD',
     'MM-DD-YYYY',
@@ -195,7 +188,6 @@ const parseDate = (dateStr) => {
     }
   }
   
-  // Last resort - let moment try to parse it
   const date = moment(dateStr);
   return date.isValid() ? date : null;
 };
@@ -204,7 +196,6 @@ export const fetchDashboardDetails = async (req, res) => {
   try {
     const { userid } = req.params; 
     
-    // Handle missing userid
     if (!userid) {
       return res.status(400).json({ 
         success: false, 
@@ -223,7 +214,6 @@ export const fetchDashboardDetails = async (req, res) => {
       });
     }
 
-    // Handle case where user has no waterId
     if (!user.waterId) {
       console.log('User has no waterId, returning hasWaterId: false');
       return res.status(200).json({ 
@@ -232,7 +222,6 @@ export const fetchDashboardDetails = async (req, res) => {
       });
     }
 
-    // Parse waterId safely
     const waterIdParts = user.waterId.split('_');
     if (waterIdParts.length < 2) {
       console.log('Invalid waterId format:', user.waterId);
@@ -244,7 +233,6 @@ export const fetchDashboardDetails = async (req, res) => {
 
     const [rootId, tenantCode] = waterIdParts;
     
-    // Handle missing rootId or tenantCode
     if (!rootId || !tenantCode) {
       console.log('Missing rootId or tenantCode');
       return res.status(200).json({ 
@@ -257,7 +245,6 @@ export const fetchDashboardDetails = async (req, res) => {
     
     if (!family) {
       console.log('Family not found for rootId:', rootId, 'tenantCode:', tenantCode);
-      // Return empty dashboard instead of error
       return res.status(200).json({
         success: true,
         hasWaterId: true,
@@ -298,7 +285,6 @@ export const fetchDashboardDetails = async (req, res) => {
     let waterUsedThisWeek = 0;
     let lastMonthWaterUsage = 0;
     
-    // Process water usage data
     if (family.waterUsage) {
       try {
         const usageData = convertMapToObject(family.waterUsage);
@@ -316,7 +302,6 @@ export const fetchDashboardDetails = async (req, res) => {
             continue;
           }
           
-          console.log(`Processing date: ${dateStr}, usage: ${usageValue}, parsed date: ${date.format('YYYY-MM-DD')}, month: ${date.format("YYYY-MM")}`);
           
           if (date.format("YYYY-MM") === currentMonth) {
             waterUsedThisMonth += usageValue;
@@ -330,7 +315,6 @@ export const fetchDashboardDetails = async (req, res) => {
         }
       } catch (error) {
         console.error('Error processing waterUsage:', error);
-        // Continue with default values
       }
     }
 
@@ -362,7 +346,6 @@ export const fetchDashboardDetails = async (req, res) => {
     const billThisMonth = Math.max(0, Math.round(waterUsedThisMonth * 10));
     const lastMonthBill = Math.max(0, Math.round(lastMonthWaterUsage * 10));
     
-    // Set due date to 5th of current month
     let dueDate;
     try {
       dueDate = `${now.format('YYYY')}-${now.format('MM')}-05`;
@@ -370,7 +353,6 @@ export const fetchDashboardDetails = async (req, res) => {
       dueDate = new Date().toISOString().split('T')[0];
     }
 
-    // Calculate next supply time
     const supplyTimes = [
       { time: '08:00', display: '8 AM' },
       { time: '12:00', display: '12 PM' },
@@ -414,7 +396,7 @@ export const fetchDashboardDetails = async (req, res) => {
     const responseData = {
       success: true,
       hasWaterId: true,
-      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100, // Round to 2 decimal places
+      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100,  
       waterUsedThisWeek: Math.round(waterUsedThisWeek * 100) / 100,
       guestsThisMonth: guestsThisMonth,
       billThisMonth: billThisMonth,

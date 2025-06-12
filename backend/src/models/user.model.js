@@ -34,6 +34,11 @@ const userSchema = new mongoose.Schema({
         required: false
     },
 
+    properties: {
+        type: [],
+        required: false,
+    },
+
     waterId: {
         type: String,
         required: false,

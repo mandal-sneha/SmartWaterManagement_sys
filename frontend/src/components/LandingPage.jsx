@@ -19,7 +19,6 @@ const LandingPage = () => {
     console.log("User signed in");
   };
 
-  // Create bubble elements
   useEffect(() => {
     const newBubbles = [];
     for (let i = 0; i < 15; i++) {
@@ -201,7 +200,6 @@ const LandingPage = () => {
     },
   };
 
-  // CSS for bubble animation
   const bubbleAnimation = `
     @keyframes rise {
       0% {

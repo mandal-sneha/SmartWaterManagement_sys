@@ -49,9 +49,9 @@ const propertySchema = new mongoose.Schema({
     },
 
     typeOfProperty: {
-        type: Boolean
+        type: String,
+        enum: ["apartment", "personal property"]
     },
-
     exactLocation :{
         type: String,
         required: false
