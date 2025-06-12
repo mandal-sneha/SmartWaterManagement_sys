@@ -8,6 +8,7 @@ import ProtectedRoute from './ProtectedRoute';
 import DashboardHome from './components/dashboardcomponents/DashboardHome.jsx';
 import WaterRegistration from './components/dashboardcomponents/WaterRegistration.jsx';
 import AddProperty from './components/dashboardcomponents/AddProperty.jsx';
+import AddPropertyForm from './components/dashboardcomponents/addpropertycomponents/AddPropertyForm.jsx';
 
 const App = () => {
   return (
@@ -27,6 +28,7 @@ const App = () => {
           <Route index element={<DashboardHome />} />
           <Route path="water-registration" element={<WaterRegistration />} />
           <Route path="add-property" element={<AddProperty />} />
+          <Route path="add-property-form" element={<AddPropertyForm />} />
         </Route>
       </Routes>
     </Router>

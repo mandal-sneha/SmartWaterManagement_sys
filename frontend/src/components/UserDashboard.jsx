@@ -208,14 +208,14 @@ const UserDashboard = () => {
             <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}`)}>
               <span style={styles.icon}>🏠</span> Dashboard
             </div>
-            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/water-registration`)}>
-              <FiPlus style={styles.icon} /> Register for Water
+            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/add-property`)}>
+              <FiPackage style={styles.icon} /> Add Property
             </div>
             <div style={styles.menuItem}>
               <FiUsers style={styles.icon} /> Manage Members & Guests
             </div>
-            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/add-property`)}>
-              <FiPackage style={styles.icon} /> Add Property
+            <div style={styles.menuItem} onClick={() => navigate(`/u/${userid}/water-registration`)}>
+              <FiPlus style={styles.icon} /> Register for Water
             </div>
             <div style={styles.menuItem}>
               <FiBarChart2 style={styles.icon} /> Usage Insights

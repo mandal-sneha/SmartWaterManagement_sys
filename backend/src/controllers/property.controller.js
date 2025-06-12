@@ -129,7 +129,7 @@ export const deleteProperty = async (req, res) => {
   try {
     const { rootid } = req.params;
 
-    const property = await Property.findOne({ rootId: rootid });
+    const property = await Property.findOne({ _id : rootid });
 
     if (!property) {
       return res.status(404).json({ success: false, message: "Property not found" });
