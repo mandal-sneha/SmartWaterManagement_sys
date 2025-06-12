@@ -50,7 +50,7 @@ const propertySchema = new mongoose.Schema({
 
     typeOfProperty: {
         type: String,
-        enum: ["apartment", "personal property"]
+        enum: ["Apartment", "Personal Property"]
     },
     exactLocation :{
         type: String,
