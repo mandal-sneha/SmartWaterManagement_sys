@@ -31,8 +31,9 @@ const App = () => {
           <Route index element={<DashboardHome />} />
           <Route path="water-registration" element={<WaterRegistration />} />
           <Route path="add-property" element={<AddProperty />} />
+          
           <Route path="add-property-form" element={<AddPropertyForm />} />
-          <Route path="add-property-form" element={<PropertyTenants/>} />
+          <Route path="property-tenants" element={<PropertyTenants/>} />
         </Route>
       </Routes>
     </Router>

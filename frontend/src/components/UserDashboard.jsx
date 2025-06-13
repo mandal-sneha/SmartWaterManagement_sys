@@ -206,6 +206,7 @@ const UserDashboard = () => {
             label="Register for Water"
             disabled={isWaterIdEmpty}
             tooltipMessage="Please add a property or join as a tenant to access this feature"
+            route={`/u/${userid}/water-registration`}
           />
           <MenuItem
             icon={<FiBarChart2 />}
