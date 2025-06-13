@@ -9,6 +9,7 @@ import DashboardHome from './components/dashboardcomponents/DashboardHome.jsx';
 import WaterRegistration from './components/dashboardcomponents/WaterRegistration.jsx';
 import AddProperty from './components/dashboardcomponents/AddProperty.jsx';
 import AddPropertyForm from './components/dashboardcomponents/addpropertycomponents/AddPropertyForm.jsx';
+import PropertyTenants from './components/dashboardcomponents/addpropertycomponents/PropertyTenants.jsx';
 
 const App = () => {
   return (
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="water-registration" element={<WaterRegistration />} />
           <Route path="add-property" element={<AddProperty />} />
           <Route path="add-property-form" element={<AddPropertyForm />} />
+          <Route path="add-property-form" element={<PropertyTenants/>} />
         </Route>
       </Routes>
     </Router>
