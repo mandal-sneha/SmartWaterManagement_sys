@@ -182,6 +182,37 @@ export const userLogin = async (req, res) => {
   }
 };
 
+export const getUser = async (req, res) => {
+    try {
+        const { userid } = req.params; 
+        
+        const user = await User.findOne({ userId: userid }).select('userProfilePhoto userId userName');
+        
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                userProfilePhoto: user.userProfilePhoto,
+                userId: user.userId,
+                userName: user.userName
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching user:", error);
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
+    }
+};
+
 export const fetchDashboardDetails = async (req, res) => {
   try {
     const { userid } = req.params; 

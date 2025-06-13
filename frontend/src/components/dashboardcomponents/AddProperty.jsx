@@ -4,7 +4,6 @@ import {
   FiArrowLeft,
   FiSearch,
   FiPlus,
-  FiEdit3,
   FiMoreVertical,
 } from "react-icons/fi";
 import { HiOutlineOfficeBuilding, HiOutlineHome } from "react-icons/hi";
@@ -62,9 +61,22 @@ const AddProperty = () => {
     }
   };
 
-  const toggleDropdown = (id) => {
-    setDropdownOpen(dropdownOpen === id ? null : id);
-    setExpandedPropertyId(dropdownOpen === id ? null : id);
+  const updateTenantCount = (propertyId, delta) => {
+    setProperties((prev) =>
+      prev.map((p) =>
+        p._id === propertyId ? { ...p, tenantCount: Math.max((p.tenantCount || 0) + delta, 0) } : p
+      )
+    );
+  };
+
+  const toggleDropdown = (propertyId) => {
+    if (expandedPropertyId === propertyId) {
+      setExpandedPropertyId(null);
+      setDropdownOpen(null);
+    } else {
+      setExpandedPropertyId(propertyId);
+      setDropdownOpen(propertyId);
+    }
   };
 
   const getAvatarIcon = (type) =>
@@ -100,7 +112,6 @@ const AddProperty = () => {
       className="font-sans min-h-screen max-h-screen overflow-hidden flex flex-col"
       style={{ backgroundColor: colors.baseColor }}
     >
-      {/* Header */}
       <div className="flex items-center mb-5 gap-4 flex-shrink-0">
         <button
           className={`bg-transparent text-xl p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
@@ -131,14 +142,12 @@ const AddProperty = () => {
         </div>
       </div>
 
-      {/* Error */}
       {error && (
         <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: "#fdecea", color: "#b91c1c", border: "1px solid #fca5a5" }}>
           {error}
         </div>
       )}
 
-      {/* Main Table */}
       <div className="flex-1 overflow-hidden">
         <div
           className="rounded-2xl overflow-hidden border h-full flex flex-col"
@@ -212,7 +221,7 @@ const AddProperty = () => {
                           {property.exactLocation || "No address"}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
-                          {Math.max(0, (property.numberOfTenants || 1) - 1)}
+                          {Math.max(0, (property.tenantCount || 0) - 1)}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
                           {property.typeOfProperty || "Unknown"}
@@ -230,7 +239,7 @@ const AddProperty = () => {
                       {expandedPropertyId === property._id && (
                         <tr>
                           <td colSpan={5} className="p-0">
-                            <PropertyTenants property={property} />
+                            <PropertyTenants property={property} updateTenantCount={updateTenantCount} />
                           </td>
                         </tr>
                       )}

@@ -4,28 +4,18 @@ import { User } from "../models/user.model.js";
 export const viewProperties = async (req, res) => {
   try {
     const { userid } = req.params;
-    
     const user = await User.findOne({ userId: userid });
-    
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (!user.properties || user.properties.length === 0) {
-      return res.status(200).json({ success: true, properties: [] });
-    }
+    const properties = await Property.find({ rootId: { $in: user.properties || [] } });
+    const enriched = properties.map((prop) => ({
+      ...prop.toObject(),
+      tenantCount: Math.max((prop.numberOfTenants || 1) - 1, 0)
+    }));
 
-    let properties = await Property.find({ 
-      rootId: { $in: user.properties } 
-    });
-
-    if (properties.length === 0) {
-      properties = await Property.find({ 
-        rootId: { $in: user.properties } 
-      });
-    }
-
-    return res.status(200).json({ success: true, properties });
+    return res.status(200).json({ success: true, properties: enriched });
   } catch (error) {
     console.error('Error in viewProperties:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });

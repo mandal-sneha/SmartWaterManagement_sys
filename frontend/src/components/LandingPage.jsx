@@ -6,7 +6,6 @@ const LandingPage = () => {
   const [bubbles, setBubbles] = useState([]);
 
   const handleNavigation = (section) => {
-    console.log(`Navigating to ${section}`);
     if (section === "Home") {
       setTimeout(() => {
         homeRef.current.scrollIntoView({ behavior: 'smooth' });
