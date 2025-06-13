@@ -5,6 +5,7 @@ import {
   FiSearch,
   FiPlus,
   FiMoreVertical,
+  FiTrash2,
 } from "react-icons/fi";
 import { HiOutlineOfficeBuilding, HiOutlineHome } from "react-icons/hi";
 import { axiosInstance } from "../../lib/axios.js";
@@ -31,6 +32,11 @@ const AddProperty = () => {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState({
+    open: false,
+    rootId: null,
+    name: "",
+  });
 
   useEffect(() => {
     fetchProperties();
@@ -113,20 +119,14 @@ const AddProperty = () => {
       style={{ backgroundColor: colors.baseColor }}
     >
       <div className="flex items-center mb-5 gap-4 flex-shrink-0">
-        <button
-          className={`bg-transparent text-xl p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
-          style={{ color: colors.textColor }}
-        >
+        <button className={`bg-transparent text-xl p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`} style={{ color: colors.textColor }}>
           <FiArrowLeft />
         </button>
         <h1 className="text-2xl font-semibold" style={{ color: colors.textColor }}>
           Add Property
         </h1>
         <div className="ml-auto relative">
-          <FiSearch
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base"
-            style={{ color: colors.mutedText }}
-          />
+          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base" style={{ color: colors.mutedText }} />
           <input
             type="text"
             placeholder="Search"
@@ -149,22 +149,12 @@ const AddProperty = () => {
       )}
 
       <div className="flex-1 overflow-hidden">
-        <div
-          className="rounded-2xl overflow-hidden border h-full flex flex-col"
-          style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
-        >
-          <div
-            className="flex justify-between items-center p-6 border-b"
-            style={{ borderColor: colors.borderColor }}
-          >
+        <div className="rounded-2xl overflow-hidden border h-full flex flex-col" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
+          <div className="flex justify-between items-center p-6 border-b" style={{ borderColor: colors.borderColor }}>
             <h2 className="text-lg font-semibold" style={{ color: colors.textColor }}>
               Properties List
             </h2>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="text-white border-none rounded-lg py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5"
-              style={{ backgroundColor: colors.primaryBg }}
-            >
+            <button onClick={() => setShowAddModal(true)} className="text-white border-none rounded-lg py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5" style={{ backgroundColor: colors.primaryBg }}>
               <FiPlus className="text-sm font-bold" />
               Add New Property
             </button>
@@ -190,11 +180,7 @@ const AddProperty = () => {
                 <thead className="sticky top-0 z-10" style={{ backgroundColor: colors.baseColor }}>
                   <tr>
                     {["Property Name", "Address", "No. of Tenants", "Property Type", "Action"].map((head, idx) => (
-                      <th
-                        key={idx}
-                        className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider border-b"
-                        style={{ color: colors.mutedText, borderColor: colors.borderColor }}
-                      >
+                      <th key={idx} className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider border-b" style={{ color: colors.mutedText, borderColor: colors.borderColor }}>
                         {head}
                       </th>
                     ))}
@@ -206,10 +192,7 @@ const AddProperty = () => {
                       <tr className="border-b" style={{ borderColor: colors.borderColor }}>
                         <td className="py-4 px-6 text-sm">
                           <div className="flex items-center gap-3">
-                            <div
-                              className="w-10 h-10 rounded-full flex items-center justify-center"
-                              style={{ backgroundColor: darkMode ? "#404040" : "#f3f4f6", color: colors.textColor }}
-                            >
+                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: darkMode ? "#404040" : "#f3f4f6", color: colors.textColor }}>
                               {getAvatarIcon(property.typeOfProperty)}
                             </div>
                             <div className="font-semibold text-sm" style={{ color: colors.textColor }}>
@@ -226,13 +209,27 @@ const AddProperty = () => {
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
                           {property.typeOfProperty || "Unknown"}
                         </td>
-                        <td className="py-4 px-6 text-sm">
+                        <td className="py-4 px-6 text-sm flex items-center gap-2">
                           <button
-                            className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 rotate-90"
+                            className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 rotate-90"
                             onClick={() => toggleDropdown(property._id)}
                             style={{ color: colors.mutedText }}
                           >
                             <FiMoreVertical />
+                          </button>
+                          <button
+                            onClick={() =>
+                              setConfirmDelete({
+                                open: true,
+                                rootId: property.rootId,
+                                name: property.propertyName,
+                              })
+                            }
+                            className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-700"
+                            style={{ color: "red" }}
+                            title="Delete Property"
+                          >
+                            <FiTrash2 />
                           </button>
                         </td>
                       </tr>
@@ -264,6 +261,32 @@ const AddProperty = () => {
           closeModal={closeModal}
           setProperties={setProperties}
         />
+      )}
+
+      {/* Confirm Delete Modal */}
+      {confirmDelete.open && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-2 text-red-600">Confirm Deletion</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+              Are you sure you want to delete <strong>{confirmDelete.name}</strong>?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDelete({ open: false, rootId: null, name: "" })}
+                className="px-4 py-2 rounded border border-gray-300 dark:border-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteProperty}
+                className="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
