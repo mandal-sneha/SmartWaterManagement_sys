@@ -13,28 +13,26 @@ const AddPropertyForm = ({
   closeModal,
   setProperties,
 }) => {
-  const isPersonal = formData.typeOfProperty === "Personal Property";
-  const isApartment = formData.typeOfProperty === "Apartment";
+  const isPersonal = formData?.typeOfProperty === "Personal Property";
+  const isApartment = formData?.typeOfProperty === "Apartment";
 
   const handleAddProperty = async (e) => {
     e.preventDefault();
-    
-    // Add safety check for setSubmitting
-    if (typeof setSubmitting === 'function') {
+
+    if (typeof setSubmitting === "function") {
       setSubmitting(true);
     }
-    
-    // Add safety check for setError
-    if (typeof setError === 'function') {
+
+    if (typeof setError === "function") {
       setError("");
     }
 
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?.userId) {
-      if (typeof setError === 'function') {
+      if (typeof setError === "function") {
         setError("User not found. Please login again.");
       }
-      if (typeof setSubmitting === 'function') {
+      if (typeof setSubmitting === "function") {
         setSubmitting(false);
       }
       return;
@@ -48,40 +46,70 @@ const AddPropertyForm = ({
       typeOfProperty,
       holdingNo,
       flatId,
-    } = formData;
+    } = formData || {};
 
-    if (
-      !propertyName ||
-      !district ||
-      !municipality ||
-      !wardNo ||
-      !typeOfProperty ||
-      (typeOfProperty === "Personal Property" && !holdingNo) ||
-      (typeOfProperty === "Apartment" && !flatId)
-    ) {
-      if (typeof setError === 'function') {
-        setError("All fields are required.");
-      }
-      if (typeof setSubmitting === 'function') {
-        setSubmitting(false);
-      }
+    if (!propertyName?.trim()) {
+      setError("Property name is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!district?.trim()) {
+      setError("District is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!municipality?.trim()) {
+      setError("Municipality is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!wardNo || parseInt(wardNo) < 1) {
+      setError("Valid ward number is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!typeOfProperty) {
+      setError("Property type is required.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (typeOfProperty === "Personal Property" && !holdingNo?.trim()) {
+      setError("Holding number is required for personal property.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (typeOfProperty === "Apartment" && !flatId?.trim()) {
+      setError("Flat ID is required for apartment.");
+      setSubmitting(false);
       return;
     }
 
     const getPreciseLocation = () =>
       new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          resolve("0,0");
+          return;
+        }
+
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
             resolve(`${latitude.toFixed(6)},${longitude.toFixed(6)}`);
           },
           (err) => {
-            reject("Failed to get location. Please enable location access.");
+            console.warn("Geolocation error:", err);
+            resolve("0,0");
           },
           {
             enableHighAccuracy: true,
             timeout: 10000,
-            maximumAge: 0,
+            maximumAge: 300000,
           }
         );
       });
@@ -89,26 +117,37 @@ const AddPropertyForm = ({
     try {
       const exactLocation = await getPreciseLocation();
 
+      const requestPayload = {
+        propertyName: propertyName.trim(),
+        district: district.trim(),
+        municipality: municipality.trim(),
+        wardNumber: parseInt(wardNo),
+        typeOfProperty,
+        exactLocation,
+        idType: typeOfProperty === "Personal Property" ? "holdingNumber" : "flatId",
+        id: typeOfProperty === "Personal Property" ? holdingNo.trim() : flatId.trim(),
+      };
+
       const res = await axiosInstance.post(
         `/property/${user.userId}/add-property`,
-        {
-          propertyName: propertyName.trim(),
-          district: district.trim(),
-          municipality: municipality.trim(),
-          wardNumber: wardNo.trim(),
-          typeOfProperty,
-          holdingNumber:
-            typeOfProperty === "Personal Property" ? holdingNo.trim() : undefined,
-          flatId: typeOfProperty === "Apartment" ? flatId.trim() : undefined,
-          exactLocation,
-        }
+        requestPayload
       );
 
-      if (res.data.success) {
-        if (typeof setProperties === 'function') {
-          setProperties((prev) => [...prev, res.data.property]);
+      // ✅ ADDITION STARTS HERE
+      if (res.data?.success) {
+        const newProperty = res.data.property;
+
+        if (typeof setProperties === "function") {
+          setProperties((prev) => [...prev, newProperty]);
         }
-        if (typeof setFormData === 'function') {
+
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        if (!storedUser?.waterId || storedUser.waterId === "") {
+          storedUser.waterId = newProperty.waterId;
+          localStorage.setItem("user", JSON.stringify(storedUser));
+        }
+
+        if (typeof setFormData === "function") {
           setFormData({
             propertyName: "",
             district: "",
@@ -119,44 +158,62 @@ const AddPropertyForm = ({
             flatId: "",
           });
         }
-        if (typeof closeModal === 'function') {
+
+        if (typeof closeModal === "function") {
           closeModal();
         }
       } else {
-        if (typeof setError === 'function') {
-          setError(res.data.message || "Failed to add property");
-        }
+        setError(res.data?.message || "Failed to add property");
       }
+      // ✅ ADDITION ENDS HERE
     } catch (err) {
       console.error("Error adding property:", err);
-      if (typeof setError === 'function') {
-        setError(
-          typeof err === "string"
-            ? err
-            : err.response?.data?.message || "Failed to add property"
-        );
-      }
+      setError(
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        "Failed to add property. Please try again."
+      );
     } finally {
-      if (typeof setSubmitting === 'function') {
-        setSubmitting(false);
-      }
+      setSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field, value) => {
+    if (typeof setFormData === "function") {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: value,
+      }));
+    }
+  };
+
+  const handlePropertyTypeChange = (value) => {
+    if (typeof setFormData === "function") {
+      setFormData((prev) => ({
+        ...prev,
+        typeOfProperty: value,
+        holdingNo: "",
+        flatId: "",
+      }));
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div
-        className="rounded-lg p-6 w-full max-w-md mx-4"
-        style={{ backgroundColor: colors?.cardBg }}
+        className="rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
+        style={{ backgroundColor: colors?.cardBg || "#ffffff" }}
       >
         <div className="flex justify-between items-center mb-4">
-          <h3
-            className="text-lg font-semibold"
-            style={{ color: colors?.textColor }}
-          >
+          <h3 className="text-lg font-semibold" style={{ color: colors?.textColor || "#000000" }}>
             Add New Property
           </h3>
-          <button onClick={closeModal} style={{ color: colors?.mutedText }}>
+          <button
+            onClick={closeModal}
+            style={{ color: colors?.mutedText || "#666666" }}
+            type="button"
+          >
             <FiX className="text-xl hover:text-red-500 transition-colors duration-150" />
           </button>
         </div>
@@ -173,19 +230,13 @@ const AddPropertyForm = ({
               type="text"
               placeholder="Property Name * (max 50 characters)"
               value={formData?.propertyName || ""}
-              onChange={(e) =>
-                setFormData &&
-                setFormData({
-                  ...formData,
-                  propertyName: e.target.value.slice(0, 50),
-                })
-              }
+              onChange={(e) => handleInputChange("propertyName", e.target.value.slice(0, 50))}
               required
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
-                backgroundColor: colors?.baseColor,
-                color: colors?.textColor,
-                borderColor: colors?.borderColor,
+                backgroundColor: colors?.baseColor || "#ffffff",
+                color: colors?.textColor || "#000000",
+                borderColor: colors?.borderColor || "#cccccc",
               }}
             />
 
@@ -193,16 +244,13 @@ const AddPropertyForm = ({
               type="text"
               placeholder="District *"
               value={formData?.district || ""}
-              onChange={(e) =>
-                setFormData &&
-                setFormData({ ...formData, district: e.target.value })
-              }
+              onChange={(e) => handleInputChange("district", e.target.value)}
               required
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
-                backgroundColor: colors?.baseColor,
-                color: colors?.textColor,
-                borderColor: colors?.borderColor,
+                backgroundColor: colors?.baseColor || "#ffffff",
+                color: colors?.textColor || "#000000",
+                borderColor: colors?.borderColor || "#cccccc",
               }}
             />
 
@@ -210,16 +258,13 @@ const AddPropertyForm = ({
               type="text"
               placeholder="Municipality *"
               value={formData?.municipality || ""}
-              onChange={(e) =>
-                setFormData &&
-                setFormData({ ...formData, municipality: e.target.value })
-              }
+              onChange={(e) => handleInputChange("municipality", e.target.value)}
               required
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
-                backgroundColor: colors?.baseColor,
-                color: colors?.textColor,
-                borderColor: colors?.borderColor,
+                backgroundColor: colors?.baseColor || "#ffffff",
+                color: colors?.textColor || "#000000",
+                borderColor: colors?.borderColor || "#cccccc",
               }}
             />
 
@@ -228,36 +273,25 @@ const AddPropertyForm = ({
               min="1"
               placeholder="Ward No. *"
               value={formData?.wardNo || ""}
-              onChange={(e) =>
-                setFormData &&
-                setFormData({ ...formData, wardNo: e.target.value })
-              }
+              onChange={(e) => handleInputChange("wardNo", e.target.value)}
               required
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
-                backgroundColor: colors?.baseColor,
-                color: colors?.textColor,
-                borderColor: colors?.borderColor,
+                backgroundColor: colors?.baseColor || "#ffffff",
+                color: colors?.textColor || "#000000",
+                borderColor: colors?.borderColor || "#cccccc",
               }}
             />
 
             <select
               value={formData?.typeOfProperty || ""}
-              onChange={(e) =>
-                setFormData &&
-                setFormData({
-                  ...formData,
-                  typeOfProperty: e.target.value,
-                  holdingNo: "",
-                  flatId: "",
-                })
-              }
+              onChange={(e) => handlePropertyTypeChange(e.target.value)}
               required
-              className="w-full p-3 border rounded-lg"
+              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               style={{
-                backgroundColor: colors?.baseColor,
-                color: colors?.textColor,
-                borderColor: colors?.borderColor,
+                backgroundColor: colors?.baseColor || "#ffffff",
+                color: colors?.textColor || "#000000",
+                borderColor: colors?.borderColor || "#cccccc",
               }}
             >
               <option value="">Select Property Type *</option>
@@ -270,16 +304,13 @@ const AddPropertyForm = ({
                 type="text"
                 placeholder="Holding No. *"
                 value={formData?.holdingNo || ""}
-                onChange={(e) =>
-                  setFormData &&
-                  setFormData({ ...formData, holdingNo: e.target.value })
-                }
+                onChange={(e) => handleInputChange("holdingNo", e.target.value)}
                 required
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 style={{
-                  backgroundColor: colors?.baseColor,
-                  color: colors?.textColor,
-                  borderColor: colors?.borderColor,
+                  backgroundColor: colors?.baseColor || "#ffffff",
+                  color: colors?.textColor || "#000000",
+                  borderColor: colors?.borderColor || "#cccccc",
                 }}
               />
             )}
@@ -289,16 +320,13 @@ const AddPropertyForm = ({
                 type="text"
                 placeholder="Flat ID *"
                 value={formData?.flatId || ""}
-                onChange={(e) =>
-                  setFormData &&
-                  setFormData({ ...formData, flatId: e.target.value })
-                }
+                onChange={(e) => handleInputChange("flatId", e.target.value)}
                 required
-                className="w-full p-3 border rounded-lg"
+                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 style={{
-                  backgroundColor: colors?.baseColor,
-                  color: colors?.textColor,
-                  borderColor: colors?.borderColor,
+                  backgroundColor: colors?.baseColor || "#ffffff",
+                  color: colors?.textColor || "#000000",
+                  borderColor: colors?.borderColor || "#cccccc",
                 }}
               />
             )}
@@ -308,10 +336,10 @@ const AddPropertyForm = ({
             <button
               type="button"
               onClick={closeModal}
-              className="flex-1 py-2 px-4 border rounded-lg"
+              className="flex-1 py-2 px-4 border rounded-lg hover:bg-gray-50 transition-colors duration-150"
               style={{
-                borderColor: colors?.borderColor,
-                color: colors?.textColor,
+                borderColor: colors?.borderColor || "#cccccc",
+                color: colors?.textColor || "#000000",
               }}
               disabled={submitting}
             >
@@ -320,8 +348,8 @@ const AddPropertyForm = ({
             <button
               type="submit"
               disabled={submitting}
-              className="flex-1 py-2 px-4 text-white rounded-lg"
-              style={{ backgroundColor: colors?.primaryBg }}
+              className="flex-1 py-2 px-4 text-white rounded-lg hover:opacity-90 transition-opacity duration-150 disabled:opacity-50"
+              style={{ backgroundColor: colors?.primaryBg || "#007bff" }}
             >
               {submitting ? "Adding..." : "Add Property"}
             </button>

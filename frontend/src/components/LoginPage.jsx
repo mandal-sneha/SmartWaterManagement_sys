@@ -10,7 +10,7 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    
+
     if (!identifier || !password) {
       setError('Please fill in all fields');
       return;
@@ -27,17 +27,17 @@ const LoginPage = () => {
 
       if (response.data.success) {
         const userData = {
-          userName: response.data.user.userName || response.data.user.username,
-          userId: response.data.user.userId,
-          email: response.data.user.email,
-          adhaarNumber: response.data.user.adhaarNumber
+          email: response.data.user.email || '',
+          userName: response.data.user.userName || '',
+          userId: response.data.user.userId || '',
+          waterId: response.data.user.waterId || ''
         };
-        
+
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(userData));
-        
+
         alert('Login successful!');
-        window.location.href = `/u/${response.data.user.userId}`;
+        window.location.href = `/u/${userData.userId}`;
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed. Please try again.');
@@ -57,7 +57,7 @@ const LoginPage = () => {
           <h1 className="text-3xl font-bold text-indigo-800 mb-2 font-poppins">Welcome to HydraOne</h1>
           <p className="text-gray-600">One-stop water resource</p>
         </div>
-        
+
         <div className="bg-white bg-opacity-50 backdrop-blur-sm p-8 rounded-xl shadow-lg">
           <div className="text-center mb-6">
             <h2 className="text-2xl font-semibold text-indigo-800 mb-2 tracking-wide">LOG IN</h2>

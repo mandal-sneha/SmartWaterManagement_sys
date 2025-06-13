@@ -42,6 +42,7 @@ const userSchema = new mongoose.Schema({
     waterId: {
         type: String,
         required: false,
+        default: ""
     },
 
     email: {

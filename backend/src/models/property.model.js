@@ -1,62 +1,56 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const propertySchema = new mongoose.Schema({
-    propertyName: {
-        type: String,
-        required: true
-    },
+  propertyName: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  rootId: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  district: {
+    type: String,
+    required: true
+  },
+  municipality: {
+    type: String,
+    required: true
+  },
+  wardNumber: {
+    type: Number,
+    required: true
+  },
+  numberOfTenants: {
+    type: Number,
+    required: true
+  },
+  families: {
+    type: [String],
+    required: true
+  },
+  typeOfProperty: {
+    type: String,
+    enum: ["Personal Property", "Apartment"],
+    required: true
+  },
+  idType: {
+    type: String,
+    enum: ["holdingNumber", "flatId"],
+    required: true
+  },
+  id: {
+    type: String,
+    required: true
+  },
+  exactLocation: {
+    type: String,
+    required: true
+  }
+}, { timestamps: true });
 
-    rootId: {
-        type: String,
-        required: true,
-    },
-
-    district: {
-        type: String,
-        required: true,
-    },
-
-    municipality: {
-        type: String,
-        required: true,
-    },
-
-    wardNumber: {
-        type: Number,
-        required: true, 
-    },
-
-    holdingNumber: {
-        type: String,
-        unique: true,
-        trim: true,
-    },
-
-    flatId: {
-        type: String,
-        unique: true,
-        trim: true,
-    },
-
-    numberOfTenants: {
-        type: Number,
-        required: false,
-    },
-
-    families: {
-        type: [],
-        required: false,
-    },
-
-    typeOfProperty: {
-        type: String,
-        enum: ["Apartment", "Personal Property"]
-    },
-    exactLocation :{
-        type: String,
-        required: false
-    }
-    
-}, {timestamps: true});
+propertySchema.index({ idType: 1, id: 1 }, { unique: true });
 
 export const Property = mongoose.model("Property", propertySchema);

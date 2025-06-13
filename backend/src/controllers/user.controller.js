@@ -17,6 +17,39 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+const convertMapToObject = (mapData) => {
+  if (!mapData) return {};
+
+  if (mapData.constructor === Object) return mapData;
+  if (mapData instanceof Map) return Object.fromEntries(mapData);
+  if (typeof mapData.toObject === 'function') return mapData.toObject();
+  if (typeof mapData.entries === 'function') return Object.fromEntries(mapData.entries());
+
+  return {};
+};
+
+const parseDate = (dateStr) => {
+  if (!dateStr) return null;
+
+  const formats = [
+    'YYYY-MM-DD',
+    'MM-DD-YYYY',
+    'DD-MM-YYYY',
+    'YYYY/MM/DD',
+    'MM/DD/YYYY',
+    'DD/MM/YYYY',
+    moment.ISO_8601
+  ];
+
+  for (const format of formats) {
+    const date = moment(dateStr, format, true);
+    if (date.isValid()) return date;
+  }
+
+  const date = moment(dateStr);
+  return date.isValid() ? date : null;
+};
+
 const uploadToCloudinary = (file) => {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
@@ -70,22 +103,23 @@ export const userSignup = async (req, res) => {
 
     await newUser.save();
 
-    const token = generateToken(newUser);
+    const savedUser = await User.findById(newUser._id);
+
+    const token = generateToken(savedUser);
+
     res.status(201).json({
       success: true,
       message: "User registered successfully",
       user: {
-        id: newUser._id,
-        username: newUser.userName,
-        userId: newUser.userId,
-        email: newUser.email,
-        adhaarNumber: newUser.adhaarNumber,
-        profilePhoto: imageUrl
+        email: savedUser.email,
+        userName: savedUser.userName,
+        userId: savedUser.userId,
+        waterId: savedUser.waterId || ""
       },
       token
     });
   } catch (error) {
-    console.error('Signup error:', error);
+    console.error('❌ Signup error:', error);
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
@@ -126,70 +160,26 @@ export const userLogin = async (req, res) => {
     }
 
     const token = generateToken(user);
-    res.json({
+
+    res.status(200).json({
       success: true,
       message: "User logged in successfully",
       user: {
-        id: user._id,
-        username: user.userName,
-        userId: user.userId,
         email: user.email,
+        userName: user.userName,
+        userId: user.userId,
+        waterId: user.waterId
       },
       token
     });
   } catch (error) {
+    console.error('❌ Login error:', error);
     res.status(500).json({ 
       success: false, 
       message: "Error logging in", 
       error: error.message 
     });
   }
-};
-
-const convertMapToObject = (mapData) => {
-  if (!mapData) return {};
-  
-  if (mapData.constructor === Object) {
-    return mapData;
-  }
-  
-  if (mapData instanceof Map) {
-    return Object.fromEntries(mapData);
-  }
-  
-  if (typeof mapData.toObject === 'function') {
-    return mapData.toObject();
-  }
-  
-  if (typeof mapData.entries === 'function') {
-    return Object.fromEntries(mapData.entries());
-  }
-  
-  return {};
-};
-
-const parseDate = (dateStr) => {
-  if (!dateStr) return null;
-  
-  const formats = [
-    'YYYY-MM-DD',
-    'MM-DD-YYYY',
-    'DD-MM-YYYY',
-    'YYYY/MM/DD',
-    'MM/DD/YYYY',
-    'DD/MM/YYYY',
-    moment.ISO_8601
-  ];
-  
-  for (const format of formats) {
-    const date = moment(dateStr, format, true);
-    if (date.isValid()) {
-      return date;
-    }
-  }
-  
-  const date = moment(dateStr);
-  return date.isValid() ? date : null;
 };
 
 export const fetchDashboardDetails = async (req, res) => {
@@ -203,11 +193,9 @@ export const fetchDashboardDetails = async (req, res) => {
       });
     }
     
-    const user = await User.findOne({ userId: userid }); 
-    console.log('User found:', user ? 'Yes' : 'No');
+    const user = await User.findOne({ userId: userid });
     
     if (!user) {
-      console.log('User not found with userId:', userid);
       return res.status(404).json({ 
         success: false, 
         message: "User not found" 
@@ -215,7 +203,6 @@ export const fetchDashboardDetails = async (req, res) => {
     }
 
     if (!user.waterId) {
-      console.log('User has no waterId, returning hasWaterId: false');
       return res.status(200).json({ 
         success: true,
         hasWaterId: false 
@@ -224,7 +211,6 @@ export const fetchDashboardDetails = async (req, res) => {
 
     const waterIdParts = user.waterId.split('_');
     if (waterIdParts.length < 2) {
-      console.log('Invalid waterId format:', user.waterId);
       return res.status(200).json({ 
         success: true,
         hasWaterId: false 
@@ -234,7 +220,6 @@ export const fetchDashboardDetails = async (req, res) => {
     const [rootId, tenantCode] = waterIdParts;
     
     if (!rootId || !tenantCode) {
-      console.log('Missing rootId or tenantCode');
       return res.status(200).json({ 
         success: true,
         hasWaterId: false 
@@ -244,7 +229,6 @@ export const fetchDashboardDetails = async (req, res) => {
     const family = await Family.findOne({ rootId, tenantCode });
     
     if (!family) {
-      console.log('Family not found for rootId:', rootId, 'tenantCode:', tenantCode);
       return res.status(200).json({
         success: true,
         hasWaterId: true,
@@ -260,26 +244,10 @@ export const fetchDashboardDetails = async (req, res) => {
       });
     }
 
-    console.log('Family document found:', {
-      rootId: family.rootId,
-      tenantCode: family.tenantCode,
-      waterUsageType: typeof family.waterUsage,
-      guestType: typeof family.numberOfGuests,
-      rawWaterUsage: family.waterUsage,
-      rawGuests: family.numberOfGuests
-    });
-
     const now = moment().tz("Asia/Kolkata");
     const currentMonth = now.format("YYYY-MM");
     const currentWeekStart = now.clone().startOf("week");
     const lastMonth = now.clone().subtract(1, 'month').format("YYYY-MM");
-
-    console.log('Date calculations:', {
-      currentTime: now.format('YYYY-MM-DD HH:mm:ss'),
-      currentMonth,
-      lastMonth,
-      currentWeekStart: currentWeekStart.format('YYYY-MM-DD')
-    });
 
     let waterUsedThisMonth = 0;
     let waterUsedThisWeek = 0;
@@ -288,7 +256,6 @@ export const fetchDashboardDetails = async (req, res) => {
     if (family.waterUsage) {
       try {
         const usageData = convertMapToObject(family.waterUsage);
-        console.log('Converted water usage data:', usageData);
         
         for (const [dateStr, usage] of Object.entries(usageData)) {
           if (!dateStr || (!usage && usage !== 0)) continue;
@@ -297,11 +264,7 @@ export const fetchDashboardDetails = async (req, res) => {
           if (isNaN(usageValue)) continue;
           
           const date = parseDate(dateStr);
-          if (!date) {
-            console.log(`Invalid date format: ${dateStr}`);
-            continue;
-          }
-          
+          if (!date) continue;
           
           if (date.format("YYYY-MM") === currentMonth) {
             waterUsedThisMonth += usageValue;
@@ -330,9 +293,7 @@ export const fetchDashboardDetails = async (req, res) => {
           if (isNaN(guestValue)) continue;
           
           const date = parseDate(dateStr);
-          if (!date) {
-            continue;
-          }
+          if (!date) continue;
                     
           if (date.format("YYYY-MM") === currentMonth) {
             guestsThisMonth += guestValue;
@@ -396,23 +357,20 @@ export const fetchDashboardDetails = async (req, res) => {
     const responseData = {
       success: true,
       hasWaterId: true,
-      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100,  
+      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100,
       waterUsedThisWeek: Math.round(waterUsedThisWeek * 100) / 100,
       guestsThisMonth: guestsThisMonth,
       billThisMonth: billThisMonth,
       lastMonthBill: lastMonthBill,
-      billStatus: "paid", 
+      billStatus: "paid",
       dueDate: dueDate,
       nextSupplyTime: nextSupplyTime,
       hoursUntilNext: hoursUntilNext
     };
 
-
     res.status(200).json(responseData);
-
   } catch (error) {
     console.error('Error fetching dashboard details:', error);
-    
     res.status(500).json({ 
       success: false,
       message: "Internal server error while fetching dashboard data",

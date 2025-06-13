@@ -4,8 +4,6 @@ import { User } from "../models/user.model.js";
 export const viewProperties = async (req, res) => {
   try {
     const { userid } = req.params;
-    console.log(req.params);
-    console.log('Fetching properties for userId:', userid);
     
     const user = await User.findOne({ userId: userid });
     
@@ -52,9 +50,9 @@ export const addProperty = async (req, res) => {
       municipality,
       wardNumber,
       typeOfProperty,
-      holdingNumber,
-      flatId,
-      exactLocation
+      exactLocation,
+      idType,
+      id
     } = req.body;
 
     if (!propertyName || !district || !municipality || !wardNumber || !typeOfProperty) {
@@ -65,12 +63,9 @@ export const addProperty = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid property type" });
     }
 
-    if (typeOfProperty === "Personal Property" && !holdingNumber) {
-      return res.status(400).json({ success: false, message: "Holding number is required for personal property" });
-    }
-
-    if (typeOfProperty === "Apartment" && !flatId) {
-      return res.status(400).json({ success: false, message: "Flat ID is required for apartment" });
+    if (!id || !id.trim()) {
+      const fieldName = typeOfProperty === "Personal Property" ? "Holding number" : "Flat ID";
+      return res.status(400).json({ success: false, message: `${fieldName} is required` });
     }
 
     const user = await User.findOne({ userId: userid });
@@ -79,32 +74,43 @@ export const addProperty = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    const propertyIdType = typeOfProperty === "Personal Property" ? "holdingNumber" : "flatId";
+    const propertyId = id.trim();
+
+    const existingProperty = await Property.findOne({ 
+      idType: propertyIdType,
+      id: propertyId
+    });
+
+    if (existingProperty) {
+      const fieldName = typeOfProperty === "Personal Property" ? "holding number" : "flat ID";
+      return res.status(400).json({ success: false, message: `A property with this ${fieldName} already exists` });
+    }
+
     const rootId = generateRootId();
+    const tenantCode = "000";
+    const waterId = `${rootId}_${tenantCode}`;
 
-    const tenantCode = '000';
-
-    const newProperty = new Property({
-      propertyName,
-      district,
-      municipality,
-      wardNumber,
-      holdingNumber: typeOfProperty === "Personal Property" ? holdingNumber : undefined,
-      flatId: typeOfProperty === "Apartment" ? flatId : undefined,
+    const newPropertyFields = {
+      propertyName: propertyName.trim(),
+      district: district.trim(),
+      municipality: municipality.trim(),
+      wardNumber: parseInt(wardNumber),
       rootId,
       numberOfTenants: 1,
       families: [],
       typeOfProperty,
+      idType: propertyIdType,
+      id: propertyId,
       exactLocation: exactLocation || ""
-    });
+    };
 
+    const newProperty = new Property(newPropertyFields);
     await newProperty.save();
-
-    const waterId = `${rootId}_${tenantCode}`;
 
     user.tenantCode = tenantCode;
     user.waterId = waterId;
-    user.properties = user.properties ? [...user.properties, rootId] : [rootId];
-
+    user.properties = [...(user.properties || []), rootId];
     await user.save();
 
     return res.status(201).json({
@@ -121,6 +127,19 @@ export const addProperty = async (req, res) => {
 
   } catch (error) {
     console.error("Error in addProperty:", error);
+    
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
+      const message = field === 'idType' || field === 'id'
+        ? "A property with these details already exists"
+        : "A property with these details already exists";
+      
+      return res.status(400).json({ 
+        success: false, 
+        message 
+      });
+    }
+    
     return res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
@@ -129,7 +148,7 @@ export const deleteProperty = async (req, res) => {
   try {
     const { rootid } = req.params;
 
-    const property = await Property.findOne({ _id : rootid });
+    const property = await Property.findOne({ rootId: rootid });
 
     if (!property) {
       return res.status(404).json({ success: false, message: "Property not found" });

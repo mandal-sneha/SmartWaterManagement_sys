@@ -11,14 +11,14 @@ import { HiOutlineOfficeBuilding, HiOutlineHome } from "react-icons/hi";
 import { axiosInstance } from "../../lib/axios.js";
 import desertCactus from "../../assets/desert-cactus.svg";
 import AddPropertyForm from "./addpropertycomponents/AddPropertyForm.jsx";
-import PropertyTenants from "./addpropertycomponents/PropertyTenants.jsx"; // ✅ NEW COMPONENT
+import PropertyTenants from "./addpropertycomponents/PropertyTenants.jsx";
 
 const AddProperty = () => {
   const { darkMode, colors } = useTheme();
   const [properties, setProperties] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(null);
-  const [expandedPropertyId, setExpandedPropertyId] = useState(null); // ✅ NEW
+  const [expandedPropertyId, setExpandedPropertyId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,7 +41,6 @@ const AddProperty = () => {
     try {
       setLoading(true);
       setError("");
-
       const user = JSON.parse(localStorage.getItem("user"));
       if (!user?.userId) {
         setError("User not found. Please login again.");
@@ -97,17 +96,26 @@ const AddProperty = () => {
   );
 
   return (
-    <div className="font-sans min-h-screen max-h-screen overflow-hidden flex flex-col" style={{ backgroundColor: colors.baseColor }}>
+    <div
+      className="font-sans min-h-screen max-h-screen overflow-hidden flex flex-col"
+      style={{ backgroundColor: colors.baseColor }}
+    >
       {/* Header */}
       <div className="flex items-center mb-5 gap-4 flex-shrink-0">
-        <button className={`bg-transparent text-xl p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`} style={{ color: colors.textColor }}>
+        <button
+          className={`bg-transparent text-xl p-2 rounded-lg ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+          style={{ color: colors.textColor }}
+        >
           <FiArrowLeft />
         </button>
         <h1 className="text-2xl font-semibold" style={{ color: colors.textColor }}>
           Add Property
         </h1>
         <div className="ml-auto relative">
-          <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base" style={{ color: colors.mutedText }} />
+          <FiSearch
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-base"
+            style={{ color: colors.mutedText }}
+          />
           <input
             type="text"
             placeholder="Search"
@@ -116,8 +124,8 @@ const AddProperty = () => {
             className="w-70 py-2.5 pl-10 pr-4 border-2 rounded-full text-sm outline-none"
             style={{
               backgroundColor: colors.cardBg,
-              color: darkMode ? "#b0b0b0" : "#374151",
-              borderColor: searchTerm ? colors.primaryBg : darkMode ? "#404040" : "#e5e7eb",
+              color: colors.textColor,
+              borderColor: searchTerm ? colors.primaryBg : colors.borderColor,
             }}
           />
         </div>
@@ -125,41 +133,59 @@ const AddProperty = () => {
 
       {/* Error */}
       {error && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+        <div className="mb-4 p-3 rounded-lg text-sm" style={{ backgroundColor: "#fdecea", color: "#b91c1c", border: "1px solid #fca5a5" }}>
           {error}
         </div>
       )}
 
       {/* Main Table */}
       <div className="flex-1 overflow-hidden">
-        <div className="rounded-2xl overflow-hidden border h-full flex flex-col" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
-          <div className="flex justify-between items-center p-6 border-b">
+        <div
+          className="rounded-2xl overflow-hidden border h-full flex flex-col"
+          style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}
+        >
+          <div
+            className="flex justify-between items-center p-6 border-b"
+            style={{ borderColor: colors.borderColor }}
+          >
             <h2 className="text-lg font-semibold" style={{ color: colors.textColor }}>
               Properties List
             </h2>
-            <button onClick={() => setShowAddModal(true)} className="text-white border-none rounded-lg py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5" style={{ backgroundColor: colors.primaryBg }}>
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="text-white border-none rounded-lg py-2.5 px-5 text-xs font-semibold flex items-center gap-1.5"
+              style={{ backgroundColor: colors.primaryBg }}
+            >
               <FiPlus className="text-sm font-bold" />
               Add New Property
             </button>
           </div>
 
           {loading ? (
-            <div className="flex-1 flex items-center justify-center p-12 text-center">
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 p-12 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2" style={{ borderColor: colors.primaryBg }}></div>
-              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">Loading properties...</p>
+              <p className="text-sm font-medium" style={{ color: colors.mutedText }}>
+                Loading properties...
+              </p>
             </div>
           ) : filteredProperties.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-6 p-12 text-center">
               <img src={desertCactus} alt="No properties" className="max-w-xs w-full" />
-              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">You don't have any properties added yet.</p>
+              <p className="text-base font-medium" style={{ color: colors.mutedText }}>
+                You don't have any properties added yet.
+              </p>
             </div>
           ) : (
             <div className="flex-1 overflow-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
               <table className="w-full border-collapse">
-                <thead className="sticky top-0 z-10" style={{ backgroundColor: darkMode ? "#333344" : "#fafbff" }}>
+                <thead className="sticky top-0 z-10" style={{ backgroundColor: colors.baseColor }}>
                   <tr>
                     {["Property Name", "Address", "No. of Tenants", "Property Type", "Action"].map((head, idx) => (
-                      <th key={idx} className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider border-b" style={{ color: colors.mutedText, borderColor: colors.borderColor }}>
+                      <th
+                        key={idx}
+                        className="py-4 px-6 text-left text-xs font-semibold uppercase tracking-wider border-b"
+                        style={{ color: colors.mutedText, borderColor: colors.borderColor }}
+                      >
                         {head}
                       </th>
                     ))}
@@ -171,7 +197,10 @@ const AddProperty = () => {
                       <tr className="border-b" style={{ borderColor: colors.borderColor }}>
                         <td className="py-4 px-6 text-sm">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: darkMode ? "#404040" : "#f3f4f6" }}>
+                            <div
+                              className="w-10 h-10 rounded-full flex items-center justify-center"
+                              style={{ backgroundColor: darkMode ? "#404040" : "#f3f4f6", color: colors.textColor }}
+                            >
                               {getAvatarIcon(property.typeOfProperty)}
                             </div>
                             <div className="font-semibold text-sm" style={{ color: colors.textColor }}>
@@ -183,7 +212,7 @@ const AddProperty = () => {
                           {property.exactLocation || "No address"}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
-                          {property.numberOfTenants || 0}
+                          {Math.max(0, (property.numberOfTenants || 1) - 1)}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
                           {property.typeOfProperty || "Unknown"}
@@ -214,7 +243,6 @@ const AddProperty = () => {
         </div>
       </div>
 
-      {/* Add Property Modal */}
       {showAddModal && (
         <AddPropertyForm
           colors={colors}
