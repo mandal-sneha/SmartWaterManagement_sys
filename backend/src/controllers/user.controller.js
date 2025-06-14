@@ -119,7 +119,6 @@ export const userSignup = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('❌ Signup error:', error);
     if (error.code === 'ECONNREFUSED') {
       return res.status(503).json({
         success: false,
@@ -173,7 +172,6 @@ export const userLogin = async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('❌ Login error:', error);
     res.status(500).json({ 
       success: false, 
       message: "Error logging in", 
@@ -200,7 +198,8 @@ export const getUser = async (req, res) => {
             data: {
                 userProfilePhoto: user.userProfilePhoto,
                 userId: user.userId,
-                userName: user.userName
+                userName: user.userName,
+                waterId: user.waterId
             }
         });
 
@@ -211,6 +210,40 @@ export const getUser = async (req, res) => {
             message: "Internal server error"
         });
     }
+};
+
+export const getFamilyMembers = async (req, res) => {
+  try {
+    const { userid } = req.params;
+
+    const currentUser = await User.findOne({ userId: userid });
+
+    if (!currentUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const { waterId } = currentUser;
+
+    if (!waterId) {
+      return res.status(400).json({ success: false, message: "User does not belong to any water group" });
+    }
+
+    const familyMembers = await User.find(
+      { waterId },
+      { userId: 1, userName: 1, userProfilePhoto: 1, _id: 0 }
+    );
+
+    return res.status(200).json({
+      success: true,
+      members: familyMembers,
+    });
+  } catch (error) {
+    console.error("Error in getFamilyMembers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 export const fetchDashboardDetails = async (req, res) => {

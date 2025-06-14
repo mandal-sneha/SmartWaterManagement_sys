@@ -85,6 +85,25 @@ const AddProperty = () => {
     }
   };
 
+  const handleDeleteProperty = async () => {
+    if (!confirmDelete.rootId) return;
+
+    try {
+      const res = await axiosInstance.delete(`/property/${confirmDelete.rootId}/delete-property`);
+      if (res.data.success) {
+        setProperties((prev) =>
+          prev.filter((p) => p.rootId !== confirmDelete.rootId)
+        );
+        setConfirmDelete({ open: false, rootId: null, name: "" });
+      } else {
+        setError(res.data.message || "Failed to delete property");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError(err.response?.data?.message || "Something went wrong while deleting");
+    }
+  };
+
   const getAvatarIcon = (type) =>
     type === "Personal Property" ? (
       <HiOutlineHome className="text-lg" />
@@ -263,7 +282,6 @@ const AddProperty = () => {
         />
       )}
 
-      {/* Confirm Delete Modal */}
       {confirmDelete.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg max-w-md w-full">

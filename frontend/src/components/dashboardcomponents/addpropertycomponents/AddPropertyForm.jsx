@@ -16,25 +16,30 @@ const AddPropertyForm = ({
   const isPersonal = formData?.typeOfProperty === "Personal Property";
   const isApartment = formData?.typeOfProperty === "Apartment";
 
+  const updateUserWaterId = async (userId) => {
+    try {
+      const response = await axiosInstance.get(`/user/${userId}/get-user`);
+      if (response.data?.success && response.data.data?.waterId) {
+        const storedUser = JSON.parse(localStorage.getItem("user"));
+        storedUser.waterId = response.data.data.waterId;
+        localStorage.setItem("user", JSON.stringify(storedUser));
+        return storedUser.waterId;
+      }
+    } catch (error) {
+      console.error("Error fetching user waterId:", error);
+    }
+    return null;
+  };
+
   const handleAddProperty = async (e) => {
     e.preventDefault();
-
-    if (typeof setSubmitting === "function") {
-      setSubmitting(true);
-    }
-
-    if (typeof setError === "function") {
-      setError("");
-    }
+    setSubmitting(true);
+    setError("");
 
     const user = JSON.parse(localStorage.getItem("user"));
     if (!user?.userId) {
-      if (typeof setError === "function") {
-        setError("User not found. Please login again.");
-      }
-      if (typeof setSubmitting === "function") {
-        setSubmitting(false);
-      }
+      setError("User not found. Please login again.");
+      setSubmitting(false);
       return;
     }
 
@@ -91,32 +96,20 @@ const AddPropertyForm = ({
     }
 
     const getPreciseLocation = () =>
-      new Promise((resolve, reject) => {
+      new Promise((resolve) => {
         if (!navigator.geolocation) {
           resolve("0,0");
           return;
         }
-
         navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const { latitude, longitude } = position.coords;
-            resolve(`${latitude.toFixed(6)},${longitude.toFixed(6)}`);
-          },
-          (err) => {
-            console.warn("Geolocation error:", err);
-            resolve("0,0");
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000,
-          }
+          (position) => resolve(`${position.coords.latitude.toFixed(6)},${position.coords.longitude.toFixed(6)}`),
+          () => resolve("0,0"),
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 }
         );
       });
 
     try {
       const exactLocation = await getPreciseLocation();
-
       const requestPayload = {
         propertyName: propertyName.trim(),
         district: district.trim(),
@@ -128,101 +121,57 @@ const AddPropertyForm = ({
         id: typeOfProperty === "Personal Property" ? holdingNo.trim() : flatId.trim(),
       };
 
-      const res = await axiosInstance.post(
-        `/property/${user.userId}/add-property`,
-        requestPayload
-      );
+      const res = await axiosInstance.post(`/property/${user.userId}/add-property`, requestPayload);
 
-      // ✅ ADDITION STARTS HERE
       if (res.data?.success) {
         const newProperty = res.data.property;
+        setProperties((prev) => [...prev, newProperty]);
 
-        if (typeof setProperties === "function") {
-          setProperties((prev) => [...prev, newProperty]);
+        const updatedWaterId = await updateUserWaterId(user.userId);
+        if (!updatedWaterId) {
+          console.error("Failed to update waterId after property creation");
         }
 
-        const storedUser = JSON.parse(localStorage.getItem("user"));
-        if (!storedUser?.waterId || storedUser.waterId === "") {
-          storedUser.waterId = newProperty.waterId;
-          localStorage.setItem("user", JSON.stringify(storedUser));
-        }
+        setFormData({
+          propertyName: "",
+          district: "",
+          municipality: "",
+          wardNo: "",
+          typeOfProperty: "",
+          holdingNo: "",
+          flatId: "",
+        });
 
-        if (typeof setFormData === "function") {
-          setFormData({
-            propertyName: "",
-            district: "",
-            municipality: "",
-            wardNo: "",
-            typeOfProperty: "",
-            holdingNo: "",
-            flatId: "",
-          });
-        }
-
-        if (typeof closeModal === "function") {
-          closeModal();
-        }
+        closeModal();
       } else {
         setError(res.data?.message || "Failed to add property");
       }
-      // ✅ ADDITION ENDS HERE
     } catch (err) {
-      console.error("Error adding property:", err);
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        err.message ||
-        "Failed to add property. Please try again."
-      );
+      setError(err.response?.data?.message || err.message || "Failed to add property. Please try again.");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleInputChange = (field, value) => {
-    if (typeof setFormData === "function") {
-      setFormData((prev) => ({
-        ...prev,
-        [field]: value,
-      }));
-    }
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handlePropertyTypeChange = (value) => {
-    if (typeof setFormData === "function") {
-      setFormData((prev) => ({
-        ...prev,
-        typeOfProperty: value,
-        holdingNo: "",
-        flatId: "",
-      }));
-    }
+    setFormData((prev) => ({ ...prev, typeOfProperty: value, holdingNo: "", flatId: "" }));
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div
-        className="rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto"
-        style={{ backgroundColor: colors?.cardBg || "#ffffff" }}
-      >
+      <div className="rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto" style={{ backgroundColor: colors?.cardBg || "#ffffff" }}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold" style={{ color: colors?.textColor || "#000000" }}>
-            Add New Property
-          </h3>
-          <button
-            onClick={closeModal}
-            style={{ color: colors?.mutedText || "#666666" }}
-            type="button"
-          >
+          <h3 className="text-lg font-semibold" style={{ color: colors?.textColor || "#000000" }}>Add New Property</h3>
+          <button onClick={closeModal} style={{ color: colors?.mutedText || "#666666" }} type="button">
             <FiX className="text-xl hover:text-red-500 transition-colors duration-150" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
+        {error && <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm">{error}</div>}
 
         <form onSubmit={handleAddProperty}>
           <div className="space-y-4">
