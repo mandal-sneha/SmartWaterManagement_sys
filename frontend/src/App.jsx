@@ -8,6 +8,7 @@ import ProtectedRoute from './ProtectedRoute';
 import DashboardHome from './components/dashboardcomponents/DashboardHome.jsx';
 import WaterRegistration from './components/dashboardcomponents/WaterRegistration.jsx';
 import AddProperty from './components/dashboardcomponents/AddProperty.jsx';
+import UsageInsights from'./components/dashboardcomponents/UsageInsights.jsx';
 import AddPropertyForm from './components/dashboardcomponents/addpropertycomponents/AddPropertyForm.jsx';
 import PropertyTenants from './components/dashboardcomponents/addpropertycomponents/PropertyTenants.jsx';
 
@@ -30,10 +31,11 @@ const App = () => {
         >
           <Route index element={<DashboardHome />} />
           <Route path="water-registration" element={<WaterRegistration />} />
-          <Route path="add-property" element={<AddProperty />} />
-          
+          <Route path="add-property" element={<AddProperty />} /> 
+          <Route path="usage-insights" element={<UsageInsights/>} />         
           <Route path="add-property-form" element={<AddPropertyForm />} />
           <Route path="property-tenants" element={<PropertyTenants/>} />
+          
         </Route>
       </Routes>
     </Router>
