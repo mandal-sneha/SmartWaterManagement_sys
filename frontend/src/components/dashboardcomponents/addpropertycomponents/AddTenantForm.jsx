@@ -22,7 +22,14 @@ const AddTenantForm = ({ isOpen, onClose, onSuccess, propertyId, axiosInstance }
     try {
       const response = await axiosInstance.get(`/user/${userId}/get-user`);
       if (response.data.success) {
-        setUserDetails(response.data.data);
+        const userData = response.data.data;
+        
+        if (userData.waterId && userData.waterId !== "") {
+          setError('User is already registered to some other property');
+          return;
+        }
+        
+        setUserDetails(userData);
       } else {
         setError('User not found');
       }
@@ -47,10 +54,11 @@ const AddTenantForm = ({ isOpen, onClose, onSuccess, propertyId, axiosInstance }
       const response = await axiosInstance.post(`/tenant/${propertyId}/${userDetails.userId}/add-tenant`, { rootId });
       if (response.data.success) {
         setSuccess('Tenant added successfully!');
+        window.dispatchEvent(new CustomEvent('refreshTenants'));
         setTimeout(() => {
           handleClose();
           onSuccess && onSuccess();
-        }, 2000);
+        }, 1500);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add tenant');

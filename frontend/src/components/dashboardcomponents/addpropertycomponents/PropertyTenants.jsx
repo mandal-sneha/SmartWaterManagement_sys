@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { FiTrash2, FiPlus } from "react-icons/fi";
+import { FiTrash2 } from "react-icons/fi";
 import { axiosInstance } from "../../../lib/axios.js";
 import blankPfp from "../../../assets/blank_pfp.jpg";
-import AddTenantForm from "./AddTenantForm";
 
 const PropertyTenants = ({ property, updateTenantCount }) => {
   const [tenants, setTenants] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showAddTenantForm, setShowAddTenantForm] = useState(false);
 
   useEffect(() => {
     if (property && property._id) {
       fetchTenants();
     }
   }, [property?._id]);
+
+  useEffect(() => {
+    const handleRefreshTenants = () => {
+      fetchTenants();
+    };
+
+    window.addEventListener('refreshTenants', handleRefreshTenants);
+    return () => {
+      window.removeEventListener('refreshTenants', handleRefreshTenants);
+    };
+  }, []);
 
   const fetchTenants = async () => {
     try {
@@ -49,14 +58,9 @@ const PropertyTenants = ({ property, updateTenantCount }) => {
     }
   };
 
-  const handleAddTenantSuccess = () => {
-    fetchTenants();
-    updateTenantCount(property._id, 1);
-  };
-
   if (loading) {
     return (
-      <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }}>
+      <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }} data-property-id={property._id}>
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
         </div>
@@ -66,25 +70,18 @@ const PropertyTenants = ({ property, updateTenantCount }) => {
 
   if (error) {
     return (
-      <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }}>
+      <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }} data-property-id={property._id}>
         <div className="text-center py-4 text-red-600 text-sm">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }}>
+    <div className="p-4 border-t" style={{ backgroundColor: "#f9fafb" }} data-property-id={property._id}>
       <div className="flex justify-between items-center mb-3">
         <h4 className="text-sm font-semibold text-gray-700">
           Tenants for: <span className="text-indigo-600">{property.propertyName}</span>
         </h4>
-        <button
-          onClick={() => setShowAddTenantForm(true)}
-          className="flex items-center gap-1 text-sm text-white font-medium bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded"
-        >
-          <FiPlus className="text-base" />
-          Add Tenant
-        </button>
       </div>
 
       <div className="overflow-x-auto">
@@ -135,14 +132,6 @@ const PropertyTenants = ({ property, updateTenantCount }) => {
           </tbody>
         </table>
       </div>
-
-      <AddTenantForm
-        isOpen={showAddTenantForm}
-        onClose={() => setShowAddTenantForm(false)}
-        onSuccess={handleAddTenantSuccess}
-        propertyId={property._id}
-        axiosInstance={axiosInstance}
-      />
     </div>
   );
 };
