@@ -30,7 +30,7 @@ export const getPropertyTenants = async (req, res) => {
             });
         }
 
-        const tenantWaterIds = property.families.slice(1); // Exclude root owner
+        const tenantWaterIds = property.families.slice(1); 
 
         const tenants = [];
 
@@ -67,26 +67,47 @@ export const getPropertyTenants = async (req, res) => {
 
 export const addTenant = async (req, res) => {
   try {
-    const { propertyid, userid } = req.params;
-    const { rootId } = req.body;
+    const { rootId, userid } = req.params;
 
-    if (!rootId) {
-      return res.status(400).json({ success: false, message: "Missing rootId" });
+    if (!rootId || !userid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing rootId or userid" 
+      });
     }
 
-    const property = await Property.findById(propertyid);
+    const property = await Property.findOne({ rootId });
     if (!property) {
-      return res.status(404).json({ success: false, message: "Property not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Property not found" 
+      });
     }
 
     const tenantUser = await User.findOne({ userId: userid });
     if (!tenantUser) {
-      return res.status(404).json({ success: false, message: "Tenant user not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Tenant user not found" 
+      });
     }
 
-    const existingCodes = property.families.map(id => id.split('_')[1]);
-    let nextCode = 0;
-    while (existingCodes.includes(nextCode.toString().padStart(3, '0'))) nextCode++;
+    if (tenantUser.waterId && tenantUser.waterId !== "") {
+      return res.status(400).json({
+        success: false,
+        message: "User is already a tenant of another property"
+      });
+    }
+
+    const existingCodes = property.families.map(id => {
+      const parts = id.split('_');
+      return parts.length > 1 ? parts[1] : null;
+    }).filter(code => code !== null);
+
+    let nextCode = 1;
+    while (existingCodes.includes(nextCode.toString().padStart(3, '0'))) {
+      nextCode++;
+    }
 
     const tenantCode = nextCode.toString().padStart(3, '0');
     const waterId = `${rootId}_${tenantCode}`;
@@ -101,29 +122,61 @@ export const addTenant = async (req, res) => {
     property.numberOfTenants = (property.numberOfTenants || 0) + 1;
     await property.save();
 
-    return res.status(200).json({ success: true, message: "Tenant added successfully", waterId });
+    return res.status(200).json({ 
+      success: true, 
+      message: "Tenant added successfully", 
+      waterId,
+      tenantCode 
+    });
   } catch (error) {
     console.error("Error in addTenant:", error);
-    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error", 
+      error: error.message 
+    });
   }
 };
+
 export const deleteTenant = async (req, res) => {
   try {
     const { propertyid, userid } = req.params;
 
+    if (!propertyid || !userid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Missing propertyid or userid" 
+      });
+    }
+
     const property = await Property.findById(propertyid);
     if (!property) {
-      return res.status(404).json({ success: false, message: "Property not found" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "Property not found" 
+      });
     }
 
     const user = await User.findOne({ userId: userid });
     if (!user || !user.waterId) {
-      return res.status(404).json({ success: false, message: "User not found or not a tenant" });
+      return res.status(404).json({ 
+        success: false, 
+        message: "User not found or not a tenant" 
+      });
     }
 
     const waterId = user.waterId;
-    const rootId = waterId.split('_')[0];
-    const tenantCode = waterId.split('_')[1];
+    const waterIdParts = waterId.split('_');
+    
+    if (waterIdParts.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid waterId format"
+      });
+    }
+
+    const rootId = waterIdParts[0];
+    const tenantCode = waterIdParts[1];
 
     property.families = property.families.filter(id => id !== waterId);
     property.numberOfTenants = Math.max(0, (property.numberOfTenants || 1) - 1);
@@ -135,9 +188,16 @@ export const deleteTenant = async (req, res) => {
     user.tenantCode = "";
     await user.save();
 
-    return res.status(200).json({ success: true, message: "Tenant deleted successfully" });
+    return res.status(200).json({ 
+      success: true, 
+      message: "Tenant deleted successfully" 
+    });
   } catch (error) {
     console.error("Error in deleteTenant:", error);
-    return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      message: "Internal server error", 
+      error: error.message 
+    });
   }
 };
