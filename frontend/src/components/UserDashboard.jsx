@@ -6,16 +6,15 @@ import React, {
 } from 'react';
 import {
   FiPlus,
-  FiUsers,
   FiPackage,
   FiBarChart2,
   FiMoon,
   FiSun,
-  FiChevronLeft,
-  FiChevronRight,
   FiUser,
-  FiMail
+  FiMail,
+  FiDroplet
 } from 'react-icons/fi';
+import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarRightCollapse } from "react-icons/tb";
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
 
@@ -121,7 +120,7 @@ const UserDashboard = () => {
           disabled
             ? 'text-gray-400 cursor-not-allowed opacity-60'
             : 'cursor-pointer'
-        }`}
+        } ${!sidebarOpen ? 'justify-center' : ''}`}
         style={{
           color: disabled
             ? theme.colors.mutedText
@@ -162,16 +161,7 @@ const UserDashboard = () => {
         color: theme.colors.textColor
       }}
     >
-      <button
-        onClick={toggleSidebar}
-        className="absolute top-5 z-50 bg-transparent border-none text-2xl transition-all duration-300"
-        style={{
-          left: sidebarOpen ? '270px' : '20px',
-          color: theme.colors.textColor
-        }}
-      >
-        {sidebarOpen ? <FiChevronLeft /> : <FiChevronRight />}
-      </button>
+
 
       <button
         onClick={theme.toggleDarkMode}
@@ -185,22 +175,85 @@ const UserDashboard = () => {
       </button>
 
       <div
-        className="flex flex-col flex-shrink-0 transition-all duration-300 gap-2 justify-between"
+        className="flex flex-col flex-shrink-0 transition-all duration-300 gap-2 justify-between h-full relative"
         style={{
-          width: sidebarOpen ? '256px' : '0',
-          padding: sidebarOpen ? '1.5rem' : '0',
+          width: sidebarOpen ? '256px' : '80px',
+          padding: sidebarOpen ? '1.5rem' : '1rem',
           background: theme.colors.sidebarBg
         }}
       >
         <div className="flex flex-col gap-2">
+          {/* HydraOne Brand / Collapse Button */}
+          <div 
+            className={`mb-6 relative ${sidebarOpen ? 'flex items-center gap-3' : 'flex justify-center'}`}
+            style={{ 
+              padding: sidebarOpen ? '1rem 0' : '0.5rem 0',
+              marginBottom: '1rem'
+            }}
+          >
+            {sidebarOpen ? (
+              <>
+                <div 
+                  className="flex items-center justify-center rounded-full"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+                  }}
+                >
+                  <FiDroplet className="text-white text-xl" />
+                </div>
+                <div className="flex flex-col">
+                  <h1 
+                     className="text-2xl font-bold"
+                    style={{
+                    fontFamily: 'Inter, system-ui, sans-serif',
+                    letterSpacing: '-0.02em',
+                    color: theme.darkMode ? '#ffffff' : '#ffffff'
+                   }}
+                  >
+                    HydraOne
+                  </h1>
+                  
+                </div>
+                <button
+                  onClick={toggleSidebar}
+                  className="absolute top-0 right-0 bg-transparent border-none text-xl transition-all duration-200 p-2 rounded-md hover:bg-opacity-20"
+                  style={{
+                    color: theme.colors.textColor
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = theme.colors.hoverBg;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <TbLayoutSidebarLeftCollapse />
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={toggleSidebar}
+                className="bg-transparent border-none text-2xl transition-all duration-200 p-3 rounded-md"
+                style={{
+                  color: theme.colors.textColor
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = theme.colors.hoverBg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+              >
+                <TbLayoutSidebarRightCollapse />
+              </button>
+            )}
+          </div>
+
           <MenuItem icon={<FiBarChart2 />} label="Dashboard" route={`/u/${userid}`} />
           <MenuItem icon={<FiPackage />} label="Add Property" route={`/u/${userid}/add-property`} />
-          <MenuItem
-            icon={<FiUsers />}
-            label="Manage Members & Guests"
-            disabled={isWaterIdEmpty}
-            tooltipMessage="Please add a property or join as a tenant to access this feature"
-          />
           <MenuItem
             icon={<FiPlus />}
             label="Register for Water"
@@ -213,6 +266,7 @@ const UserDashboard = () => {
             label="Usage Insights"
             disabled={isWaterIdEmpty}
             tooltipMessage="Please add a property or join as a tenant to access this feature"
+            route={`/u/${userid}/usage-insights`}
           />
           <MenuItem
             icon={<FiMail />}
@@ -222,25 +276,43 @@ const UserDashboard = () => {
         </div>
 
         <div
-          className="mt-auto pt-5 text-base font-bold text-center flex items-center justify-center rounded-xl p-3 gap-3"
+          className={`mt-auto pt-5 text-base font-bold text-center rounded-xl p-3 ${
+            sidebarOpen ? 'flex items-center justify-center gap-3' : 'flex items-center justify-center'
+          }`}
           style={{
-            display: sidebarOpen ? 'flex' : 'none',
             backgroundColor: theme.colors.secondaryBg,
             color: theme.colors.textColor
           }}
         >
-          <FiUser />
-          <span className="text-lg">{userData.userName || 'Guest'}</span>
+          {sidebarOpen ? (
+            <>
+              <FiUser className="text-lg" />
+              <span className="text-lg">{userData.userName || 'Guest'}</span>
+            </>
+          ) : (
+            <div 
+              className="flex items-center justify-center rounded-full text-white font-bold text-lg"
+              style={{
+                width: '36px',
+                height: '36px',
+                background: theme.darkMode 
+                  ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' 
+                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                boxShadow: theme.darkMode 
+                  ? '0 4px 12px rgba(79, 70, 229, 0.4)' 
+                  : '0 4px 12px rgba(102, 126, 234, 0.4)'
+              }}
+            >
+              {userData.userName ? userData.userName.charAt(0).toUpperCase() : 'G'}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex-grow p-8 min-w-0 flex-1" style={{ backgroundColor: theme.colors.baseColor }}>
-        <div className="flex justify-between items-center flex-wrap mb-8">
-          <h2 className="text-3xl font-semibold" style={{ color: theme.colors.textColor }}>
-            Smart Water Dashboard
-          </h2>
+      <div className="flex-grow min-w-0 flex-1 overflow-y-auto" style={{ backgroundColor: theme.colors.baseColor }}>
+        <div className="p-8">
+          <Outlet />
         </div>
-        <Outlet />
       </div>
     </div>
   );
