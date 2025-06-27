@@ -2,7 +2,8 @@ import React, {
   useState,
   useEffect,
   createContext,
-  useContext
+  useContext,
+  useRef
 } from 'react';
 import {
   FiPlus,
@@ -12,7 +13,9 @@ import {
   FiSun,
   FiUser,
   FiMail,
-  FiDroplet
+  FiDroplet,
+  FiLogOut,
+  FiSettings
 } from 'react-icons/fi';
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarRightCollapse } from "react-icons/tb";
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
@@ -70,12 +73,14 @@ export const useTheme = () => {
 
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [userData, setUserData] = useState({
     userName: '',
     userId: '',
     waterId: ''
   });
 
+  const dropdownRef = useRef(null);
   const { userid } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -99,7 +104,41 @@ const UserDashboard = () => {
     }
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setProfileDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const toggleSidebar = () => setSidebarOpen((prev) => !prev);
+  const toggleProfileDropdown = () => setProfileDropdownOpen((prev) => !prev);
+
+  const handleProfile = () => {
+    setProfileDropdownOpen(false);
+    navigate(`/u/${userid}/profile`);
+  };
+
+  const handleLogout = () => {
+    setProfileDropdownOpen(false);
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
+  const handleInvitations = () => {
+    // Just close any dropdowns, don't navigate
+    setProfileDropdownOpen(false);
+    // You can add any other invitation-related logic here
+    console.log('View Invitations clicked');
+  };
 
   const DisabledTooltip = ({ children, message }) => (
     <div className="relative group">
@@ -161,19 +200,6 @@ const UserDashboard = () => {
         color: theme.colors.textColor
       }}
     >
-
-
-      <button
-        onClick={theme.toggleDarkMode}
-        className="absolute top-5 right-8 z-50 bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
-        style={{
-          color: theme.colors.textColor
-        }}
-        title={theme.darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-      >
-        {theme.darkMode ? <FiSun /> : <FiMoon />}
-      </button>
-
       <div
         className="flex flex-col flex-shrink-0 transition-all duration-300 gap-2 justify-between h-full relative"
         style={{
@@ -268,50 +294,150 @@ const UserDashboard = () => {
             tooltipMessage="Please add a property or join as a tenant to access this feature"
             route={`/u/${userid}/usage-insights`}
           />
-          <MenuItem
-            icon={<FiMail />}
-            label="View Invitations"
-            route={`/u/${userid}/invitations`}
-          />
         </div>
 
-        <div
-          className={`mt-auto pt-5 text-base font-bold text-center rounded-xl p-3 ${
-            sidebarOpen ? 'flex items-center justify-center gap-3' : 'flex items-center justify-center'
-          }`}
-          style={{
-            backgroundColor: theme.colors.secondaryBg,
-            color: theme.colors.textColor
-          }}
-        >
-          {sidebarOpen ? (
-            <>
-              <FiUser className="text-lg" />
-              <span className="text-lg">{userData.userName || 'Guest'}</span>
-            </>
-          ) : (
-            <div 
-              className="flex items-center justify-center rounded-full text-white font-bold text-lg"
+        {/* Profile Section with Dropdown */}
+        <div className="mt-auto pt-5 relative" ref={dropdownRef}>
+          <div
+            className={`text-base font-bold text-center rounded-xl p-3 cursor-pointer transition-all duration-200 ${
+              sidebarOpen ? 'flex items-center justify-center gap-3' : 'flex items-center justify-center'
+            }`}
+            style={{
+              backgroundColor: theme.colors.secondaryBg,
+              color: theme.colors.textColor
+            }}
+            onClick={toggleProfileDropdown}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = theme.colors.hoverBg;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = theme.colors.secondaryBg;
+            }}
+          >
+            {sidebarOpen ? (
+              <>
+                <FiUser className="text-lg" />
+                <span className="text-lg">{userData.userName || 'Guest'}</span>
+              </>
+            ) : (
+              <div 
+                className="flex items-center justify-center rounded-full text-white font-bold text-lg"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  background: theme.darkMode 
+                    ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' 
+                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: theme.darkMode 
+                    ? '0 4px 12px rgba(79, 70, 229, 0.4)' 
+                    : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                }}
+              >
+                {userData.userName ? userData.userName.charAt(0).toUpperCase() : 'G'}
+              </div>
+            )}
+          </div>
+
+          {/* Profile Dropdown */}
+          {profileDropdownOpen && (
+            <div
+              className="absolute bottom-full mb-2 rounded-lg shadow-lg border overflow-hidden"
               style={{
-                width: '36px',
-                height: '36px',
-                background: theme.darkMode 
-                  ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' 
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: theme.darkMode 
-                  ? '0 4px 12px rgba(79, 70, 229, 0.4)' 
-                  : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                backgroundColor: theme.colors.cardBg,
+                borderColor: theme.colors.borderColor,
+                width: sidebarOpen ? '100%' : '180px',
+                left: sidebarOpen ? '0' : '100%',
+                right: sidebarOpen ? 'auto' : '0',
+                zIndex: 1000
               }}
             >
-              {userData.userName ? userData.userName.charAt(0).toUpperCase() : 'G'}
+              <div
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-200"
+                style={{ color: theme.colors.textColor }}
+                onClick={handleProfile}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <FiSettings className="text-lg" />
+                <span>Profile</span>
+              </div>
+              <div
+                className="flex items-center gap-3 px-4 py-3 cursor-pointer transition-all duration-200"
+                style={{ color: theme.colors.textColor }}
+                onClick={handleLogout}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = theme.colors.hoverBg;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                }}
+              >
+                <FiLogOut className="text-lg" />
+                <span>Logout</span>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      <div className="flex-grow min-w-0 flex-1 overflow-y-auto" style={{ backgroundColor: theme.colors.baseColor }}>
-        <div className="p-8">
-          <Outlet />
+      {/* Main Content Area */}
+      <div className="flex-grow min-w-0 flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: theme.colors.baseColor }}>
+        {/* Top-right controls container */}
+        <div 
+          className="flex justify-end items-center px-8 py-5 border-b"
+          style={{
+            borderColor: theme.colors.borderColor,
+            backgroundColor: theme.colors.baseColor
+          }}
+        >
+          <div className="flex items-center gap-3">
+            {/* View Invitations Icon */}
+            <button
+              onClick={handleInvitations}
+              className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
+              style={{
+                color: theme.colors.textColor
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = theme.colors.hoverBg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title="View Invitations"
+            >
+              <FiMail />
+            </button>
+
+            {/* Dark/Light Mode Toggle */}
+            <button
+              onClick={theme.toggleDarkMode}
+              className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
+              style={{
+                color: theme.colors.textColor
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = theme.colors.hoverBg;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+              }}
+              title={theme.darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {theme.darkMode ? <FiSun /> : <FiMoon />}
+            </button>
+          </div>
+        </div>
+
+        {/* Dashboard Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-8">
+            <Outlet />
+          </div>
         </div>
       </div>
     </div>
