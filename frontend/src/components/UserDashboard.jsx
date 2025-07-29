@@ -93,18 +93,56 @@ const UserDashboard = () => {
     if (storedUser) {
       try {
         const parsed = JSON.parse(storedUser);
-        setUserData({
+        const newUserData = {
           userName: parsed.userName || '',
           userId: parsed.userId || '',
           waterId: parsed.waterId || ''
-        });
+        };
+        setUserData(newUserData);
+        
+        if (parsed.userId && parsed.userId !== userid) {
+          const currentPath = location.pathname;
+          const newPath = currentPath.replace(`/u/${userid}`, `/u/${parsed.userId}`);
+          navigate(newPath, { replace: true });
+        }
       } catch (e) {
         console.error('Invalid user in localStorage:', e);
       }
     }
-  }, []);
+  }, [userid, location.pathname, navigate]);
 
-  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'user') {
+        const storedUser = e.newValue;
+        if (storedUser) {
+          try {
+            const parsed = JSON.parse(storedUser);
+            const newUserData = {
+              userName: parsed.userName || '',
+              userId: parsed.userId || '',
+              waterId: parsed.waterId || ''
+            };
+            setUserData(newUserData);
+            
+            if (parsed.userId && parsed.userId !== userid) {
+              const currentPath = location.pathname;
+              const newPath = currentPath.replace(`/u/${userid}`, `/u/${parsed.userId}`);
+              navigate(newPath, { replace: true });
+            }
+          } catch (e) {
+            console.error('Invalid user in localStorage:', e);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, [userid, location.pathname, navigate]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -123,7 +161,8 @@ const UserDashboard = () => {
 
   const handleProfile = () => {
     setProfileDropdownOpen(false);
-    navigate(`/u/${userid}/profile`);
+    const currentUserId = userData.userId || userid;
+    navigate(`/u/${currentUserId}/profile`);
   };
 
   const handleLogout = () => {
@@ -134,9 +173,7 @@ const UserDashboard = () => {
   };
 
   const handleInvitations = () => {
-    // Just close any dropdowns, don't navigate
     setProfileDropdownOpen(false);
-    // You can add any other invitation-related logic here
     console.log('View Invitations clicked');
   };
 
@@ -153,6 +190,9 @@ const UserDashboard = () => {
   const isActiveRoute = (route) => location.pathname === route;
 
   const MenuItem = ({ icon, label, route, disabled = false, tooltipMessage = '' }) => {
+    const currentUserId = userData.userId || userid;
+    const actualRoute = route ? route.replace(userid, currentUserId) : route;
+    
     const content = (
       <div
         className={`p-4 text-base flex items-center gap-4 rounded-md font-medium transition-all duration-200 ${
@@ -164,18 +204,18 @@ const UserDashboard = () => {
           color: disabled
             ? theme.colors.mutedText
             : theme.colors.textColor,
-          backgroundColor: isActiveRoute(route)
+          backgroundColor: isActiveRoute(actualRoute)
             ? theme.colors.activeBg
             : 'transparent'
         }}
-        onClick={() => !disabled && route && navigate(route)}
+        onClick={() => !disabled && actualRoute && navigate(actualRoute)}
         onMouseEnter={(e) => {
-          if (!disabled && !isActiveRoute(route)) {
+          if (!disabled && !isActiveRoute(actualRoute)) {
             e.currentTarget.style.background = theme.colors.hoverBg;
           }
         }}
         onMouseLeave={(e) => {
-          if (!disabled && !isActiveRoute(route)) {
+          if (!disabled && !isActiveRoute(actualRoute)) {
             e.currentTarget.style.background = 'transparent';
           }
         }}
@@ -191,6 +231,8 @@ const UserDashboard = () => {
       content
     );
   };
+
+  const currentUserId = userData.userId || userid;
 
   return (
     <div
@@ -209,7 +251,6 @@ const UserDashboard = () => {
         }}
       >
         <div className="flex flex-col gap-2">
-          {/* HydraOne Brand / Collapse Button */}
           <div 
             className={`mb-6 relative ${sidebarOpen ? 'flex items-center gap-3' : 'flex justify-center'}`}
             style={{ 
@@ -278,25 +319,24 @@ const UserDashboard = () => {
             )}
           </div>
 
-          <MenuItem icon={<FiBarChart2 />} label="Dashboard" route={`/u/${userid}`} />
-          <MenuItem icon={<FiPackage />} label="Add Property" route={`/u/${userid}/add-property`} />
+          <MenuItem icon={<FiBarChart2 />} label="Dashboard" route={`/u/${currentUserId}`} />
+          <MenuItem icon={<FiPackage />} label="Add Property" route={`/u/${currentUserId}/add-property`} />
           <MenuItem
             icon={<FiPlus />}
             label="Register for Water"
             disabled={isWaterIdEmpty}
             tooltipMessage="Please add a property or join as a tenant to access this feature"
-            route={`/u/${userid}/water-registration`}
+            route={`/u/${currentUserId}/water-registration`}
           />
           <MenuItem
             icon={<FiBarChart2 />}
             label="Usage Insights"
             disabled={isWaterIdEmpty}
             tooltipMessage="Please add a property or join as a tenant to access this feature"
-            route={`/u/${userid}/usage-insights`}
+            route={`/u/${currentUserId}/usage-insights`}
           />
         </div>
 
-        {/* Profile Section with Dropdown */}
         <div className="mt-auto pt-5 relative" ref={dropdownRef}>
           <div
             className={`text-base font-bold text-center rounded-xl p-3 cursor-pointer transition-all duration-200 ${
@@ -338,7 +378,6 @@ const UserDashboard = () => {
             )}
           </div>
 
-          {/* Profile Dropdown */}
           {profileDropdownOpen && (
             <div
               className="absolute bottom-full mb-2 rounded-lg shadow-lg border overflow-hidden"
@@ -384,9 +423,7 @@ const UserDashboard = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-grow min-w-0 flex-1 flex flex-col overflow-hidden" style={{ backgroundColor: theme.colors.baseColor }}>
-        {/* Top-right controls container */}
         <div 
           className="flex justify-end items-center px-8 py-5 border-b"
           style={{
@@ -395,7 +432,6 @@ const UserDashboard = () => {
           }}
         >
           <div className="flex items-center gap-3">
-            {/* View Invitations Icon */}
             <button
               onClick={handleInvitations}
               className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
@@ -413,7 +449,6 @@ const UserDashboard = () => {
               <FiMail />
             </button>
 
-            {/* Dark/Light Mode Toggle */}
             <button
               onClick={theme.toggleDarkMode}
               className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
@@ -433,7 +468,6 @@ const UserDashboard = () => {
           </div>
         </div>
 
-        {/* Dashboard Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-8">
             <Outlet />

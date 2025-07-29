@@ -16,28 +16,24 @@ const familySchema = new mongoose.Schema({
         required: false,
     },
 
-    numberOfGuests: {
+    guests: {
         type: Map,
-        of: Number,
-        required: false,
+        of: []
     },
 
     extraWaterDates: {
-        type: [String],
-        required: false,
+        type: Map,
+        of : Number
     },
 
     fineDates: {
-        type: Map,
-        of: Number,
-        required: false,
+        type: []
     },
 
     waterUsage: {
         type: Map,
         of: Number,
-        default: {},
-        required: false,
+        default: {}
     },
 
 }, {timestamps: true});

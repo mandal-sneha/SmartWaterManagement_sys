@@ -18,6 +18,11 @@ const userSchema = new mongoose.Schema({
         required: true
     },
 
+    verificationPhoto: {
+        type: String,
+        required: false
+    },
+
     adhaarNumber: {
         type: Number,
         unique: true,

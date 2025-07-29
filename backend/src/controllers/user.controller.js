@@ -1,5 +1,8 @@
 import { User } from "../models/user.model.js";
 import { Family } from "../models/family.model.js";
+import { Property } from "../models/property.model.js";
+import { Invitation } from "../models/invitation.model.js";
+import { Verification } from "../models/verification.model.js";
 import { generateToken } from "../utils/generate.token.js";
 import { axiosInstance } from "../lib/axios.js";
 import { v2 as cloudinary } from "cloudinary";
@@ -8,6 +11,7 @@ import dotenv from "dotenv";
 import streamifier from "streamifier";
 import moment from "moment-timezone";
 import bcrypt from "bcryptjs";
+import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -100,6 +104,7 @@ export const userSignup = async (req, res) => {
       email: email,
       password: hashedPassword,
       userProfilePhoto: imageUrl,
+      verificationPhoto: "",
       adhaarNumber: Number(adhaarNumber),
       embeddingVector: embedding,
     });
@@ -183,6 +188,301 @@ export const userLogin = async (req, res) => {
   }
 };
 
+export const verifyEmail = async (req, res) => {
+  try {
+    const { useremail } = req.params;
+
+    if (!useremail) {
+      return res.status(400).json({ message: "Email parameter is missing." });
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000);
+    const expiry = new Date(Date.now() + 10 * 60 * 1000);
+
+    await Verification.findOneAndUpdate(
+      { email: useremail },
+      { otp, expiry },
+      { new: true, upsert: true }
+    );
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      secure: process.env.SMTP_PORT == 465,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"HydraOne" <${process.env.EMAIL_USER}>`,
+      to: useremail,
+      subject: "Email Verification - One-Time Password",
+      html: `
+<html>
+<head>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Inter', Arial, sans-serif;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
+        <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden;">
+            <!-- Header with gradient -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
+                <h1 style="color: white; font-size: 28px; margin: 0; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">HydraOne</h1>
+                <div style="width: 60px; height: 3px; background: rgba(255,255,255,0.3); margin: 15px auto; border-radius: 2px;"></div>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 40px 30px;">
+                <div style="text-align: center; margin-bottom: 30px;">
+                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            <path d="M9 12L11 14L15 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <h2 style="color: #2d3748; font-size: 24px; margin: 0 0 10px 0; font-weight: 600;">Verify Your Account</h2>
+                    <p style="color: #718096; font-size: 16px; margin: 0;">Enter this code to complete your verification</p>
+                </div>
+                
+                <!-- OTP Display -->
+                <div style="text-align: center; margin: 40px 0;">
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px dashed #667eea; border-radius: 12px; padding: 30px; display: inline-block; position: relative;">
+                        <div style="position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; z-index: -1; opacity: 0.1;"></div>
+                        <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">${otp}</span>
+                    </div>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #fef5e7 0%, #fed7aa 100%); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 30px 0;">
+                    <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
+                        ⏰ This code expires in 10 minutes for your security
+                    </p>
+                </div>
+                
+                <p style="color: #718096; font-size: 14px; text-align: center; margin: 30px 0 0 0; line-height: 1.6;">
+                    Didn't request this? You can safely ignore this email or 
+                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 500;">contact support</a>
+                </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; text-align: center;">
+                <p style="color: #a0aec0; font-size: 12px; margin: 0;">
+                    © ${new Date().getFullYear()} HydraOne. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+   `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: `Verification OTP has been sent to ${useremail}.`,
+    });
+  } catch (error) {
+    console.error("Error during email verification:", error);
+    return res.status(500).json({
+      success: false,
+      message: "An error occurred while sending the verification email.",
+      error: error.message,
+    });
+  }
+};
+
+export const viewInvitedGuests = async (req, res) => {
+  try {
+    const { waterid } = req.params;
+
+    const invitations = await Invitation.find({ hostwaterId: waterid });
+
+    const invitedGuests = [];
+
+    for (const invitation of invitations) {
+      if (!Array.isArray(invitation.invitedGuests)) continue;
+
+      for (const userId of invitation.invitedGuests) {
+        const user = await User.findOne(
+          { userId },
+          { userId: 1, userName: 1, userProfilePhoto: 1 }
+        );
+
+        if (user) {
+          invitedGuests.push({
+            userId: user.userId,
+            userName: user.userName,
+            userProfilePhoto: user.userProfilePhoto,
+            arrivalTime: invitation.arrivalTime?.get(userId) || null,
+            stayDuration: invitation.stayDuration?.get(userId) || null,
+          });
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      invitedGuests,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Server Error",
+    });
+  }
+};
+
+export const viewMonthwiseDetails = async (req, res) => {
+  try {
+    const { waterid } = req.params;
+    const [rootId, tenantCode] = waterid.split("_");
+
+    const family = await Family.findOne({
+      rootId: rootId,
+      tenantCode: tenantCode,
+    });
+
+    if (!family) {
+      return res.status(404).json({
+        success: false,
+        message: "Family not found",
+      });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const monthlyAggregated = {};
+    const monthlyDailyDetails = {};
+
+    const monthNames = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    for (let month = 0; month < 12; month++) {
+      const monthName = monthNames[month];
+      monthlyAggregated[monthName] = {
+        totalWaterUsed: 0,
+        totalFines: 0,
+      };
+      monthlyDailyDetails[monthName] = {};
+    }
+
+    if (family.waterUsage && family.waterUsage.size > 0) {
+      for (const [dateStr, usage] of family.waterUsage) {
+        const date = new Date(dateStr);
+        if (date.getFullYear() === currentYear) {
+          const monthName = monthNames[date.getMonth()];
+          const day = date.getDate();
+
+          monthlyAggregated[monthName].totalWaterUsed += usage;
+
+          if (!monthlyDailyDetails[monthName][day]) {
+            monthlyDailyDetails[monthName][day] = {
+              waterUsed: 0,
+              guests: [],
+            };
+          }
+
+          monthlyDailyDetails[monthName][day].waterUsed += usage;
+        }
+      }
+    }
+
+    if (family.guests && family.guests.size > 0) {
+      for (const [dateStr, guestIds] of family.guests) {
+        const date = new Date(dateStr);
+        if (date.getFullYear() === currentYear) {
+          const monthName = monthNames[date.getMonth()];
+          const day = date.getDate();
+
+          if (!monthlyDailyDetails[monthName][day]) {
+            monthlyDailyDetails[monthName][day] = {
+              waterUsed: 0,
+              guests: [],
+            };
+          }
+
+          if (Array.isArray(guestIds) && guestIds.length > 0) {
+            const guestDetails = await User.find(
+              { userId: { $in: guestIds } },
+              { userId: 1, userName: 1, userProfilePhoto: 1 }
+            );
+
+            monthlyDailyDetails[monthName][day].guests = guestDetails.map(
+              (guest) => ({
+                userId: guest.userId,
+                userName: guest.userName,
+                userProfilePhoto: guest.userProfilePhoto,
+              })
+            );
+          }
+        }
+      }
+    }
+
+    if (family.fineDates && Array.isArray(family.fineDates)) {
+      family.fineDates.forEach((dateStr) => {
+        const date = new Date(dateStr);
+        if (date.getFullYear() === currentYear) {
+          const monthName = monthNames[date.getMonth()];
+          monthlyAggregated[monthName].totalFines += 1;
+        }
+      });
+    }
+
+    const aggregatedData = Object.entries(monthlyAggregated).map(
+      ([monthName, data]) => ({
+        month: monthName,
+        totalWaterUsed: `${data.totalWaterUsed}L`,
+        totalFines: data.totalFines,
+      })
+    );
+
+    const dailyDetailsData = {};
+    Object.entries(monthlyDailyDetails).forEach(([monthName, monthData]) => {
+      dailyDetailsData[monthName] = Object.entries(monthData)
+        .map(([day, dayData]) => ({
+          day: parseInt(day),
+          waterUsed: `${dayData.waterUsed}L`,
+          guestCount: dayData.guests.length,
+          guests: dayData.guests,
+        }))
+        .sort((a, b) => a.day - b.day);
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        aggregatedMonthlyData: aggregatedData,
+        dailyDetailsData: dailyDetailsData,
+      },
+    });
+  } catch (error) {
+    console.error("Error in viewMonthwiseDetails:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
+};
+
 export const getUser = async (req, res) => {
   try {
     const { userid } = req.params;
@@ -217,52 +517,123 @@ export const getUser = async (req, res) => {
   }
 };
 
+export const getProfileDetails = async (req, res) => {
+  try {
+    const { userid } = req.params;
+
+    const user = await User.findOne({ userId: userid }).lean();
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const userDetails = {
+      userName: user.userName,
+      userId: user.userId,
+      userProfilePhoto: user.userProfilePhoto,
+      adhaarNumber: user.adhaarNumber,
+      waterId: user.waterId,
+    };
+
+    const propertyRootIds = user.properties || [];
+
+    const propertyDocs = await Property.find({
+      rootId: { $in: propertyRootIds },
+    }).lean();
+
+    const properties = propertyDocs.map((p) => ({
+      propertyName: p.propertyName,
+      municipality: p.municipality,
+      wardNumber: p.wardNumber,
+      district: p.district,
+      numberOfTenants: p.numberOfTenants,
+      typeOfProperty: p.typeOfProperty,
+    }));
+
+    return res.status(200).json({
+      user: userDetails,
+      properties,
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
+  }
+};
+
 export const getFamilyMembers = async (req, res) => {
- try {
-   const { userid } = req.params;
+  try {
+    const { userid } = req.params;
 
-   const currentUser = await User.findOne({ userId: userid });
+    const currentUser = await User.findOne({ userId: userid });
 
-   if (!currentUser) {
-     return res
-       .status(404)
-       .json({ success: false, message: "User not found" });
-   }
+    if (!currentUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
 
-   const { waterId } = currentUser;
+    const { waterId } = currentUser;
 
-   if (!waterId || waterId === "") {
-     return res
-       .status(200)
-       .json({
-         success: true,
-         members: [],
-       });
-   }
+    if (!waterId || waterId === "") {
+      return res.status(200).json({
+        success: true,
+        members: [],
+      });
+    }
 
-   const familyMembers = await User.find(
-     { waterId },
-     { userId: 1, userName: 1, userProfilePhoto: 1, _id: 0 }
-   );
+    const familyMembers = await User.find(
+      { waterId },
+      { userId: 1, userName: 1, userProfilePhoto: 1, adhaarNumber: 1, email: 1 }
+    );
 
-   return res.status(200).json({
-     success: true,
-     members: familyMembers,
-   });
- } catch (error) {
-   console.error("Error in getFamilyMembers:", error);
-   return res.status(500).json({
-     success: false,
-     message: "Internal server error",
-   });
- }
+    const allFieldsMembers = await User.find({ waterId });
+
+    return res.status(200).json({
+      success: true,
+      members: familyMembers,
+    });
+  } catch (error) {
+    console.error("Error in getFamilyMembers:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
 };
 
 export const addFamilyMember = async (req, res) => {
   try {
+    const { userid, memberid } = req.params;
 
+    const user = await User.findOne({ userId: userid });
+    if (!user) {
+      return res.status(404).json({ message: "Adding user not found" });
+    }
+
+    const { tenantCode, waterId } = user;
+
+    const member = await User.findOne({ userId: memberid });
+    if (!member) {
+      return res.status(404).json({ message: "Member user not found" });
+    }
+
+    const rootId = waterId.split("_")[0];
+
+    member.tenantCode = tenantCode;
+    member.waterId = waterId;
+
+    if (!member.properties.includes(rootId)) {
+      member.properties.push(rootId);
+    }
+
+    await member.save();
+
+    res
+      .status(200)
+      .json({ message: "Family member added successfully", member });
   } catch (error) {
-
+    console.error("Error adding family member:", error);
+    res
+      .status(500)
+      .json({ message: "Server error while adding family member" });
   }
 };
 
@@ -465,4 +836,65 @@ export const fetchDashboardDetails = async (req, res) => {
       error: error.message,
     });
   }
+};
+
+export const updateUserProfile = async (req, res) => {
+    try {
+        const { userid } = req.params;
+        const { userName, userProfilePhoto, email, userId: newUserId } = req.body;
+
+        const updateFields = {};
+        if (userName !== undefined && userName !== null) updateFields.userName = userName;
+        if (userProfilePhoto !== undefined && userProfilePhoto !== null) updateFields.userProfilePhoto = userProfilePhoto;
+        
+        if (email !== undefined && email !== null) {
+            const existingEmailUser = await User.findOne({ email, userId: { $ne: userid } });
+            if (existingEmailUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Email already exists"
+                });
+            }
+            updateFields.email = email;
+        }
+
+        if (newUserId !== undefined && newUserId !== null && newUserId !== userid) {
+            const existingUserIdUser = await User.findOne({ userId: newUserId });
+            if (existingUserIdUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: "User ID already exists"
+                });
+            }
+            updateFields.userId = newUserId;
+        }
+
+        const existingUser = await User.findOne({ userId: userid });
+        if (!existingUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+        }
+
+        await User.updateOne(
+            { userId: userid },
+            { $set: updateFields }
+        );
+
+        const updatedUser = await User.findOne({ userId: newUserId || userid });
+
+        res.status(200).json({
+            success: true,
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Internal server error",
+            error: error.message
+        });
+    }
 };

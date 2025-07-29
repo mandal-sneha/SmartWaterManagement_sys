@@ -7,6 +7,7 @@ import { ConnectDB } from "./src/lib/db.js";
 import userRoutes from "./src/routes/user.route.js";
 import tenantRoutes from "./src/routes/tenant.route.js";
 import propertyRoutes from "./src/routes/property.route.js";
+import invitationRoutes from "./src/routes/invitation.route.js";
 
 dotenv.config();
 
@@ -23,8 +24,9 @@ app.use(fileUpload());
 app.use("/user", userRoutes);
 app.use("/tenant", tenantRoutes);
 app.use("/property", propertyRoutes);
+app.use("/invitation", invitationRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 app.listen(PORT, () => {
     console.log(`Server running on port: ${PORT}`);

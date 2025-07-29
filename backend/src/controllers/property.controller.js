@@ -1,6 +1,6 @@
 import { Property } from "../models/property.model.js";
 import { User } from "../models/user.model.js";
-import { Family } from "../models/family.model.js"
+import { Family } from "../models/family.model.js";
 
 export const viewProperties = async (req, res) => {
   try {
