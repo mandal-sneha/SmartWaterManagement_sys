@@ -20,6 +20,7 @@ import {
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarRightCollapse } from "react-icons/tb";
 import { Outlet, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { axiosInstance } from '../lib/axios';
+import ViewInvitation from './dashboardcomponents/ViewInvitation';
 
 export const ThemeContext = createContext();
 
@@ -74,10 +75,12 @@ export const useTheme = () => {
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [invitationModalOpen, setInvitationModalOpen] = useState(false);
   const [userData, setUserData] = useState({
     userName: '',
     userId: '',
-    waterId: ''
+    waterId: '',
+    userProfilePhoto: ''
   });
 
   const dropdownRef = useRef(null);
@@ -98,7 +101,7 @@ const UserDashboard = () => {
           userId: parsed.userId || '',
           waterId: parsed.waterId || ''
         };
-        setUserData(newUserData);
+        setUserData(prevData => ({ ...prevData, ...newUserData }));
         
         if (parsed.userId && parsed.userId !== userid) {
           const currentPath = location.pathname;
@@ -110,6 +113,26 @@ const UserDashboard = () => {
       }
     }
   }, [userid, location.pathname, navigate]);
+  
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (userData.userId) {
+        try {
+          const response = await axiosInstance.get(`/user/${userData.userId}/get-user`);
+          if (response.data && response.data.userProfilePhoto) {
+            setUserData(prevData => ({
+              ...prevData,
+              userProfilePhoto: response.data.userProfilePhoto
+            }));
+          }
+        } catch (error) {
+          console.error('Failed to fetch user profile:', error);
+        }
+      }
+    };
+  
+    fetchUserProfile();
+  }, [userData.userId]);
 
   useEffect(() => {
     const handleStorageChange = (e) => {
@@ -123,7 +146,7 @@ const UserDashboard = () => {
               userId: parsed.userId || '',
               waterId: parsed.waterId || ''
             };
-            setUserData(newUserData);
+            setUserData(prevData => ({ ...prevData, ...newUserData }));
             
             if (parsed.userId && parsed.userId !== userid) {
               const currentPath = location.pathname;
@@ -174,7 +197,7 @@ const UserDashboard = () => {
 
   const handleInvitations = () => {
     setProfileDropdownOpen(false);
-    console.log('View Invitations clicked');
+    setInvitationModalOpen(true);
   };
 
   const DisabledTooltip = ({ children, message }) => (
@@ -340,11 +363,11 @@ const UserDashboard = () => {
         <div className="mt-auto pt-5 relative" ref={dropdownRef}>
           <div
             className={`text-base font-bold text-center rounded-xl p-3 cursor-pointer transition-all duration-200 ${
-              sidebarOpen ? 'flex items-center justify-center gap-3' : 'flex items-center justify-center'
+              sidebarOpen ? 'flex items-center gap-3' : 'flex items-center justify-center'
             }`}
             style={{
               backgroundColor: theme.colors.secondaryBg,
-              color: theme.colors.textColor
+              color: theme.colors.textColor,
             }}
             onClick={toggleProfileDropdown}
             onMouseEnter={(e) => {
@@ -356,24 +379,40 @@ const UserDashboard = () => {
           >
             {sidebarOpen ? (
               <>
-                <FiUser className="text-lg" />
+                <div 
+                  className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0"
+                  style={{
+                    backgroundColor: userData.userProfilePhoto ? 'transparent' : theme.colors.mutedText,
+                    minWidth: '32px',
+                    minHeight: '32px'
+                  }}
+                >
+                  {userData.userProfilePhoto ? (
+                    <img 
+                      src={userData.userProfilePhoto} 
+                      alt={userData.userName || 'User'} 
+                      className="w-full h-full object-cover" 
+                    />
+                  ) : null}
+                </div>
                 <span className="text-lg">{userData.userName || 'Guest'}</span>
               </>
             ) : (
               <div 
-                className="flex items-center justify-center rounded-full text-white font-bold text-lg"
+                className="w-9 h-9 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden flex-shrink-0"
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  background: theme.darkMode 
-                    ? 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' 
-                    : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: theme.darkMode 
-                    ? '0 4px 12px rgba(79, 70, 229, 0.4)' 
-                    : '0 4px 12px rgba(102, 126, 234, 0.4)'
+                  backgroundColor: userData.userProfilePhoto ? 'transparent' : theme.colors.mutedText,
+                  minWidth: '36px',
+                  minHeight: '36px'
                 }}
               >
-                {userData.userName ? userData.userName.charAt(0).toUpperCase() : 'G'}
+                {userData.userProfilePhoto ? (
+                  <img 
+                    src={userData.userProfilePhoto} 
+                    alt={userData.userName || 'User'} 
+                    className="w-full h-full object-cover" 
+                  />
+                ) : null}
               </div>
             )}
           </div>
@@ -434,7 +473,7 @@ const UserDashboard = () => {
           <div className="flex items-center gap-3">
             <button
               onClick={handleInvitations}
-              className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
+              className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200 cursor-pointer"
               style={{
                 color: theme.colors.textColor
               }}
@@ -474,6 +513,12 @@ const UserDashboard = () => {
           </div>
         </div>
       </div>
+
+      <ViewInvitation 
+        isOpen={invitationModalOpen} 
+        onClose={() => setInvitationModalOpen(false)} 
+        theme={theme} 
+      />
     </div>
   );
 };

@@ -14,7 +14,7 @@ import Profile from './components/Profile.jsx';
 import UserDetails from './components/profilepagecomponents/UserDetails.jsx';
 // import FamilyMemberDetails from './components/profilepagecomponents/FamilyMemberDetails.jsx';
 // import CurrentProperty from './components/profilepagecomponents/CurrentProperty.jsx';
-// import ViewInvitation from './components/dashboardcomponents/ViewInvitation.jsx';
+import ViewInvitation from './components/dashboardcomponents/ViewInvitation.jsx';
 import AddPropertyForm from './components/dashboardcomponents/addpropertycomponents/AddPropertyForm.jsx';
 import PropertyTenants from './components/dashboardcomponents/addpropertycomponents/PropertyTenants.jsx';
 
@@ -57,7 +57,7 @@ const App = () => {
           <Route path="usage-insights" element={<UsageInsights/>} />         
           <Route path="add-property-form" element={<AddPropertyForm />} />
           <Route path="property-tenants" element={<PropertyTenants/>} />
-          {/* <Route path="view-invitation" element={<ViewInvitation/>} /> */}
+          <Route path="view-invitation" element={<ViewInvitation/>} />
         </Route>
       </Routes>
     </Router>

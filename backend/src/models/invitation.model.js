@@ -5,8 +5,14 @@ const invitationSchema = new mongoose.Schema({
         type: String,
     },
 
+    hostId: {
+        type: String,
+        required: true
+    },
+
     invitedGuests: {
-        type: []
+        type: Map,
+        of: String
     },
 
     arrivalTime: {
