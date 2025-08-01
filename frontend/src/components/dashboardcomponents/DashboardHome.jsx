@@ -10,10 +10,13 @@ import {
   FiCalendar,
   FiCheck,
   FiAlertCircle,
-  FiPlus
+  FiPlus,
+  FiUser,
+  FiStar
 } from 'react-icons/fi';
 import { useTheme } from '../UserDashboard';
 import desertCactus from '../../assets/desert-cactus.svg';
+
 
 const DashboardHome = () => {
   const { darkMode, colors } = useTheme();
@@ -103,13 +106,6 @@ const DashboardHome = () => {
            }}>
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="text-center">
-            {/* <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
-                 style={{ backgroundColor: colors.primaryBg }}>
-              <FiDroplet className="w-8 h-8 text-white" />
-            </div> */}
-            {/* <h1 className="text-4xl font-bold mb-2" style={{ color: colors.textColor }}>
-              Water Dashboard
-            </h1> */}
             <div className="flex items-center justify-center gap-2" style={{ color: colors.mutedText }}>
               <FiCalendar className="w-4 h-4" />
               <span className="text-sm font-medium">
@@ -121,7 +117,6 @@ const DashboardHome = () => {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8">
-        {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
                style={{ backgroundColor: colors.baseColor }}>
@@ -184,7 +179,6 @@ const DashboardHome = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Water Usage Chart */}
           <div className="lg:col-span-2 rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
             <div className="flex items-center justify-between mb-8">
               <div>
@@ -196,16 +190,15 @@ const DashboardHome = () => {
                 <span>Today</span>
               </div>
             </div>
-            
-            {/* Daily Water Allocation */}
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="text-center p-6 rounded-xl" 
                    style={{ backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff' }}>
                 <div className="text-3xl font-bold mb-2" style={{ color: colors.primaryBg }}>
-                  {d.dailyWaterAllocation || '500'}L
+                  {d.waterAllocatedTillNow || '350'}L
                 </div>
-                <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Daily Allocation</div>
-                <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Base quota</div>
+                <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Allocated Till Now</div>
+                <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Total allocated</div>
               </div>
               
               <div className="text-center p-6 rounded-xl" 
@@ -227,7 +220,6 @@ const DashboardHome = () => {
               </div>
             </div>
 
-            {/* Guest Details */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Today's Guest Details</h3>
               <div className="space-y-3">
@@ -261,66 +253,82 @@ const DashboardHome = () => {
               </div>
             </div>
 
-            {/* Extra Water Requests */}
             <div>
-              <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Extra Water Requests</h3>
+              <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Family Members Present Today</h3>
               <div className="space-y-3">
-                {(d.extraWaterRequests || [
-                  { reason: 'Additional bathroom cleaning', amount: '80L', time: '11:30 AM', status: 'approved', requestedBy: 'House Owner' },
-                  { reason: 'Garden watering & plant care', amount: '70L', time: '3:15 PM', status: 'approved', requestedBy: 'Gardener' },
-                  { reason: 'Car washing', amount: '50L', time: '5:45 PM', status: 'pending', requestedBy: 'Rajesh Kumar' }
-                ]).map((request, index) => (
+                {(d.familyMembers || [
+                  { name: 'Ravi Patel', userId: 'RP001', waterAllocation: '120L', isSpecial: true },
+                  { name: 'Meera Patel', userId: 'MP002', waterAllocation: '100L', isSpecial: false },
+                  { name: 'Arjun Patel', userId: 'AP003', waterAllocation: '80L', isSpecial: false },
+                  { name: 'Kavya Patel', userId: 'KP004', waterAllocation: '70L', isSpecial: true }
+                ]).map((member, index) => (
                   <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
                        style={{ 
-                         backgroundColor: darkMode ? 'rgba(249, 115, 22, 0.1)' : '#fff7ed',
-                         borderColor: request.status === 'approved' ? (colors.accent || '#22c55e') : '#f59e0b'
+                         backgroundColor: member.isSpecial 
+                           ? (darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff')
+                           : (darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
+                         borderColor: member.isSpecial 
+                           ? colors.primaryBg 
+                           : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
                        }}>
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                           style={{ backgroundColor: request.status === 'approved' ? (colors.accent || '#22c55e') : '#f59e0b' }}>
-                        <FiPlus className="w-5 h-5 text-white" />
+                           style={{ backgroundColor: member.isSpecial ? colors.primaryBg : (colors.accent || '#22c55e') }}>
+                        {member.isSpecial ? (
+                          <FiStar className="w-5 h-5 text-white" />
+                        ) : (
+                          <FiUser className="w-5 h-5 text-white" />
+                        )}
                       </div>
                       <div>
-                        <div className="font-medium" style={{ color: colors.textColor }}>{request.reason}</div>
-                        <div className="text-xs" style={{ color: colors.mutedText }}>Requested by {request.requestedBy}</div>
-                        <div className="text-xs" style={{ color: colors.mutedText, opacity: 0.7 }}>At {request.time}</div>
+                        <div className="flex items-center gap-2">
+                          <div className="font-medium" style={{ color: colors.textColor }}>{member.name}</div>
+                          {member.isSpecial && (
+                            <div className="flex items-center">
+                              <input 
+                                type="checkbox" 
+                                checked={member.isSpecial} 
+                                readOnly
+                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                              />
+                              <label className="ml-1 text-xs font-medium" style={{ color: colors.primaryBg }}>
+                                Special
+                              </label>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs" style={{ color: colors.mutedText }}>ID: {member.userId}</div>
+                        <div className="text-xs" style={{ color: colors.mutedText, opacity: 0.7 }}>{member.relation}</div>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="font-bold text-lg text-orange-600">{request.amount}</div>
-                      <div className={`text-xs font-medium px-2 py-1 rounded ${
-                        request.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                      }`}>
-                        {request.status.toUpperCase()}
-                      </div>
+                      <div className="font-bold text-lg" style={{ color: colors.textColor }}>{member.waterAllocation}</div>
+                      <div className="text-xs" style={{ color: colors.mutedText }}>Allocated</div>
                     </div>
                   </div>
                 ))}
               </div>
-              
-              {/* Total Extra Water Summary */}
+
               <div className="mt-4 p-4 rounded-lg border-2 border-dashed"
                    style={{ 
-                     backgroundColor: darkMode ? 'rgba(249, 115, 22, 0.05)' : '#fef3c7',
-                     borderColor: '#f59e0b'
+                     backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.05)' : '#f0f9ff',
+                     borderColor: colors.primaryBg
                    }}>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-semibold" style={{ color: colors.textColor }}>Total Extra Water Today</div>
-                    <div className="text-xs" style={{ color: colors.mutedText }}>Approved: 150L • Pending: 50L</div>
+                    <div className="font-semibold" style={{ color: colors.textColor }}>Total Family Water Today</div>
+                    <div className="text-xs" style={{ color: colors.mutedText }}>Special Members: 2 • Regular Members: 2</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-orange-600">200L</div>
-                    <div className="text-xs" style={{ color: colors.mutedText }}>Additional</div>
+                    <div className="text-2xl font-bold" style={{ color: colors.primaryBg }}>370L</div>
+                    <div className="text-xs" style={{ color: colors.mutedText }}>Total allocated</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Billing Card */}
             <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -355,16 +363,8 @@ const DashboardHome = () => {
                   </div>
                 </div>
               </div>
-              
-              {d.billStatus === 'unpaid' && (
-                <button className="w-full mt-6 text-white py-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        style={{ backgroundColor: colors.primaryBg }}>
-                  Pay Now
-                </button>
-              )}
             </div>
 
-            {/* Water Supply Schedule */}
             <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -401,18 +401,12 @@ const DashboardHome = () => {
               </div>
             </div>
 
-            {/* Quick Actions */}
             <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
               <h3 className="text-lg font-bold mb-4" style={{ color: colors.textColor }}>Quick Actions</h3>
               <div className="space-y-3">
                 <button className="w-full flex items-center justify-center gap-3 p-3 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        style={{ backgroundColor: colors.primaryBg }}>
-                  <FiUsers className="w-5 h-5" />
-                  Manage Guests
-                </button>
-                <button className="w-full flex items-center justify-center gap-3 p-3 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
                         style={{ backgroundColor: colors.accent || '#22c55e' }}>
-                  <FiCreditCard className="w-5 h-5" />
+                  <FiFileText className="w-5 h-5" />
                   Payment History
                 </button>
               </div>
