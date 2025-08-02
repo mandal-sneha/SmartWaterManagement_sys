@@ -297,6 +297,85 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+export const addFamilyMember = async (req, res) => {
+  try {
+    const { userid, memberid } = req.params;
+
+    const user = await User.findOne({ userId: userid });
+    if (!user) {
+      return res.status(404).json({ message: "Adding user not found" });
+    }
+
+    const { tenantCode, waterId } = user;
+
+    const member = await User.findOne({ userId: memberid });
+    if (!member) {
+      return res.status(404).json({ message: "Member user not found" });
+    }
+
+    const rootId = waterId.split("_")[0];
+
+    member.tenantCode = tenantCode;
+    member.waterId = waterId;
+
+    if (!member.properties.includes(rootId)) {
+      member.properties.push(rootId);
+    }
+
+    await member.save();
+
+    res
+      .status(200)
+      .json({ message: "Family member added successfully", member });
+  } catch (error) {
+    console.error("Error adding family member:", error);
+    res
+      .status(500)
+      .json({ message: "Server error while adding family member" });
+  }
+};
+
+export const getCurrentDayGuests = async (req, res) => {
+  try {
+    const { waterid } = req.params;
+    const invitation = await Invitation.findOne({
+      hostwaterId: waterid,
+    }).lean();
+    if (!invitation) return res.status(200).json([]);
+    const {
+      invitedGuests = {},
+      arrivalTime = {},
+      stayDuration = {},
+    } = invitation;
+    const accepted = Object.entries(invitedGuests)
+      .filter(
+        ([, status]) =>
+          typeof status === "string" &&
+          status.trim().toLowerCase() === "accepted"
+      )
+      .map(([id]) => id);
+    if (!accepted.length) return res.status(200).json([]);
+    const payload = await Promise.all(
+      accepted.map(async (id) => {
+        const u = await User.findOne({ userId: id })
+          .lean()
+          .select("userId userName userProfilePhoto");
+        if (!u) return null;
+        return {
+          userId: u.userId,
+          userName: u.userName,
+          userProfilePhoto: u.userProfilePhoto,
+          arrivalTime: arrivalTime[id] || "",
+          stayDuration: (stayDuration[id] || "").replace(/\s*day$/i, ""),
+        };
+      })
+    );
+    return res.status(200).json(payload.filter(Boolean));
+  } catch (e) {
+    return res.status(500).json({ message: e.message });
+  }
+};
+
 export const viewInvitedGuests = async (req, res) => {
   try {
     const { waterid } = req.params;
@@ -599,44 +678,6 @@ export const getFamilyMembers = async (req, res) => {
   }
 };
 
-export const addFamilyMember = async (req, res) => {
-  try {
-    const { userid, memberid } = req.params;
-
-    const user = await User.findOne({ userId: userid });
-    if (!user) {
-      return res.status(404).json({ message: "Adding user not found" });
-    }
-
-    const { tenantCode, waterId } = user;
-
-    const member = await User.findOne({ userId: memberid });
-    if (!member) {
-      return res.status(404).json({ message: "Member user not found" });
-    }
-
-    const rootId = waterId.split("_")[0];
-
-    member.tenantCode = tenantCode;
-    member.waterId = waterId;
-
-    if (!member.properties.includes(rootId)) {
-      member.properties.push(rootId);
-    }
-
-    await member.save();
-
-    res
-      .status(200)
-      .json({ message: "Family member added successfully", member });
-  } catch (error) {
-    console.error("Error adding family member:", error);
-    res
-      .status(500)
-      .json({ message: "Server error while adding family member" });
-  }
-};
-
 export const fetchDashboardDetails = async (req, res) => {
   try {
     const { userid } = req.params;
@@ -839,62 +880,63 @@ export const fetchDashboardDetails = async (req, res) => {
 };
 
 export const updateUserProfile = async (req, res) => {
-    try {
-        const { userid } = req.params;
-        const { userName, userProfilePhoto, email, userId: newUserId } = req.body;
+  try {
+    const { userid } = req.params;
+    const { userName, userProfilePhoto, email, userId: newUserId } = req.body;
 
-        const updateFields = {};
-        if (userName !== undefined && userName !== null) updateFields.userName = userName;
-        if (userProfilePhoto !== undefined && userProfilePhoto !== null) updateFields.userProfilePhoto = userProfilePhoto;
-        
-        if (email !== undefined && email !== null) {
-            const existingEmailUser = await User.findOne({ email, userId: { $ne: userid } });
-            if (existingEmailUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Email already exists"
-                });
-            }
-            updateFields.email = email;
-        }
+    const updateFields = {};
+    if (userName !== undefined && userName !== null)
+      updateFields.userName = userName;
+    if (userProfilePhoto !== undefined && userProfilePhoto !== null)
+      updateFields.userProfilePhoto = userProfilePhoto;
 
-        if (newUserId !== undefined && newUserId !== null && newUserId !== userid) {
-            const existingUserIdUser = await User.findOne({ userId: newUserId });
-            if (existingUserIdUser) {
-                return res.status(400).json({
-                    success: false,
-                    message: "User ID already exists"
-                });
-            }
-            updateFields.userId = newUserId;
-        }
-
-        const existingUser = await User.findOne({ userId: userid });
-        if (!existingUser) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
-            });
-        }
-
-        await User.updateOne(
-            { userId: userid },
-            { $set: updateFields }
-        );
-
-        const updatedUser = await User.findOne({ userId: newUserId || userid });
-
-        res.status(200).json({
-            success: true,
-            message: "Profile updated successfully",
-            user: updatedUser
+    if (email !== undefined && email !== null) {
+      const existingEmailUser = await User.findOne({
+        email,
+        userId: { $ne: userid },
+      });
+      if (existingEmailUser) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already exists",
         });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Internal server error",
-            error: error.message
-        });
+      }
+      updateFields.email = email;
     }
+
+    if (newUserId !== undefined && newUserId !== null && newUserId !== userid) {
+      const existingUserIdUser = await User.findOne({ userId: newUserId });
+      if (existingUserIdUser) {
+        return res.status(400).json({
+          success: false,
+          message: "User ID already exists",
+        });
+      }
+      updateFields.userId = newUserId;
+    }
+
+    const existingUser = await User.findOne({ userId: userid });
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    await User.updateOne({ userId: userid }, { $set: updateFields });
+
+    const updatedUser = await User.findOne({ userId: newUserId || userid });
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error.message,
+    });
+  }
 };

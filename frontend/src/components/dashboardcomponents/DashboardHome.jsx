@@ -21,6 +21,7 @@ import desertCactus from '../../assets/desert-cactus.svg';
 const DashboardHome = () => {
   const { darkMode, colors } = useTheme();
   const [dashboardData, setDashboardData] = useState(null);
+  const [guestData, setGuestData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -29,9 +30,24 @@ const DashboardHome = () => {
       try {
         const userObject = localStorage.getItem('user');
         const userId = userObject ? JSON.parse(userObject).userId : localStorage.getItem('userId');
+        const waterId = userObject ? JSON.parse(userObject).waterId : null;
+        
         if (!userId) throw new Error('User ID not found');
+        if (!waterId) throw new Error('Water ID not found');
+
         const { data } = await axiosInstance.get(`/user/${userId}/dashboard`);
         setDashboardData(data);
+
+        try {
+          const guestResponse = await axiosInstance.get(`/user/${waterId}/get-currentday-guests`);
+          if (Array.isArray(guestResponse.data)) {
+            setGuestData(guestResponse.data);
+          } else {
+            setGuestData([]);
+          }
+        } catch (guestError) {
+          setGuestData([]);
+        }
       } catch (err) {
         setError(err.message || 'Failed to fetch dashboard data');
       } finally {
@@ -39,6 +55,14 @@ const DashboardHome = () => {
       }
     })();
   }, []);
+
+  const formatTime = (time24) => {
+    const [hours, minutes] = time24.split(':');
+    const hour24 = parseInt(hours);
+    const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+    const period = hour24 >= 12 ? 'PM' : 'AM';
+    return `${hour12}:${minutes} ${period}`;
+  };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: darkMode ? '#1a1a1a' : '#f8fafc' }}>
@@ -98,7 +122,6 @@ const DashboardHome = () => {
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
-      {/* Header */}
       <div className="shadow-sm border-b" 
            style={{ 
              backgroundColor: colors.baseColor,
@@ -204,7 +227,7 @@ const DashboardHome = () => {
               <div className="text-center p-6 rounded-xl" 
                    style={{ backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4' }}>
                 <div className="text-3xl font-bold mb-2" style={{ color: colors.accent || '#22c55e' }}>
-                  {d.todayGuests || 3}
+                  {d.todayGuests || guestData.length}
                 </div>
                 <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Today's Guests</div>
                 <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Invited today</div>
@@ -222,35 +245,44 @@ const DashboardHome = () => {
 
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Today's Guest Details</h3>
-              <div className="space-y-3">
-                {(d.guestDetails || [
-                  { name: 'Rajesh Kumar', waterAllocation: '60L', timeSlot: '9:00 AM - 1:00 PM',  },
-                  { name: 'Priya Sharma', waterAllocation: '45L', timeSlot: '2:00 PM - 5:00 PM',  },
-                  { name: 'Amit Singh', waterAllocation: '75L', timeSlot: '6:00 PM - 9:00 PM',  }
-                ]).map((guest, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                       style={{ 
-                         backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                         borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                       }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                           style={{ backgroundColor: colors.accent || '#22c55e' }}>
-                        <FiUsers className="w-5 h-5 text-white" />
+              {guestData.length > 0 ? (
+                <div className="space-y-3">
+                  {guestData.map((guest, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
+                         style={{ 
+                           backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
+                           borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                         }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden">
+                          <img 
+                            src={guest.userProfilePhoto} 
+                            alt={guest.userName}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
+                          <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="font-medium" style={{ color: colors.textColor }}>{guest.name}</div>
-                        <div className="text-xs" style={{ color: colors.mutedText }}>{guest.timeSlot}</div>
-                        <div className="text-xs" style={{ color: colors.mutedText, opacity: 0.7 }}>{guest.phone}</div>
+                      <div className="text-right">
+                        <div className="font-bold text-sm" style={{ color: colors.textColor }}>
+                          {formatTime(guest.arrivalTime)}
+                        </div>
+                        <div className="text-xs" style={{ color: colors.mutedText }}>
+                          {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg" style={{ color: colors.textColor }}>{guest.waterAllocation}</div>
-                      <div className="text-xs" style={{ color: colors.mutedText }}>Allocated</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8" style={{ color: colors.mutedText }}>
+                  <FiUsers className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No guests invited for today</p>
+                </div>
+              )}
             </div>
 
             <div>

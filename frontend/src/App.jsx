@@ -11,9 +11,6 @@ import WaterRegistration from './components/dashboardcomponents/WaterRegistratio
 import AddProperty from './components/dashboardcomponents/AddProperty.jsx';
 import UsageInsights from './components/dashboardcomponents/UsageInsights.jsx';
 import Profile from './components/Profile.jsx';
-import UserDetails from './components/profilepagecomponents/UserDetails.jsx';
-// import FamilyMemberDetails from './components/profilepagecomponents/FamilyMemberDetails.jsx';
-// import CurrentProperty from './components/profilepagecomponents/CurrentProperty.jsx';
 import ViewInvitation from './components/dashboardcomponents/ViewInvitation.jsx';
 import AddPropertyForm from './components/dashboardcomponents/addpropertycomponents/AddPropertyForm.jsx';
 import PropertyTenants from './components/dashboardcomponents/addpropertycomponents/PropertyTenants.jsx';

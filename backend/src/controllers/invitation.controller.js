@@ -73,7 +73,7 @@ export const viewInvitations = async (req, res) => {
     }
 };
 
-export const registerinvitation = async (req, res) => {
+export const registerInvitation = async (req, res) => {
     try {
         const { rootid } = req.params;
         const { guests, arrivalTime, stayDuration } = req.body;
