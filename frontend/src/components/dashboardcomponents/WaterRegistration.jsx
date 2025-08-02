@@ -151,19 +151,67 @@ const WaterRegistration = () => {
   const handleRegisterForWater = async () => {
     try {
       setIsRegistering(true);
-      console.log('Registering for water with:', {
-        familyMembers: familyMembers.length,
-        spMembers: Array.from(spMembers),
-        guests: guests,
-        requestExtraWater: requestExtraWater
+      
+      const allFamilyMembers = [...familyMembers];
+      allFamilyMembers.push({
+        userId: currentUser.userId,
+        userName: currentUser.userName
       });
       
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const primaryMembers = allFamilyMembers.map(member => member.userId);
+      const specialMembers = Array.from(spMembers);
+      const invitedGuests = guests.map(guest => guest.userId);
       
-      alert('Water registration submitted successfully!');
+      const waterId = currentUser.waterId;
+      
+      const waterRegistrationResponse = await axiosInstance.post(`/waterregistration/${waterId}/register-for-water`, {
+        primaryMembers,
+        specialMembers,
+        extraWaterRequested: requestExtraWater
+      });
+      
+      if (!waterRegistrationResponse.data.success) {
+        return;
+      }
+
+      if (guests.length > 0) {
+        const guestIds = guests.map(guest => guest.userId);
+        const arrivalTime = {};
+        const stayDuration = {};
+        
+        guests.forEach(guest => {
+          arrivalTime[guest.userId] = guest.entryTime;
+          stayDuration[guest.userId] = guest.stayTime;
+        });
+        
+        const hostId = currentUser.userId;
+        const hostWaterId = currentUser.waterId;
+
+        const invitationResponse = await axiosInstance.post(`/invitation/${hostId}/${hostWaterId}/register-invitation`, {
+          guests: guestIds,
+          arrivalTime,
+          stayDuration
+        });
+        
+        if (!invitationResponse.data.success) {
+          alert('Water registration successful but failed to send guest invitations: ' + (invitationResponse.data.message || 'Please try again.'));
+          return;
+        }
+        
+        alert('Water registration and guest invitations sent successfully!');
+      } else {
+        alert('Water registration submitted successfully!');
+      }
+      
+      setSpMembers(new Set());
+      setGuests([]);
+      setRequestExtraWater(false);
+      
     } catch (error) {
       console.error('Registration failed:', error);
-      alert('Registration failed. Please try again.');
+      console.error('Error details:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsRegistering(false);
     }
@@ -191,7 +239,7 @@ const WaterRegistration = () => {
             )}
             <div>
               <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
-              <div className="text-sm" style={{ color: colors.mutedText }}>ID: {guest.userId}</div>
+              <div className="text-sm" style={{ color: colors.mutedText }}>{guest.userId}</div>
             </div>
           </div>
           <div className="flex items-center" style={{ color: colors.textColor }}>
@@ -273,7 +321,7 @@ const WaterRegistration = () => {
                       )}
                       <div>
                         <h3 className="font-medium" style={{ color: colors.textColor }}>{member.userName}</h3>
-                        <p className="text-sm" style={{ color: colors.mutedText }}>ID: {member.userId}</p>
+                        <p className="text-sm" style={{ color: colors.mutedText }}>{member.userId}</p>
                         {spMembers.has(member.userId) && (
                           <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">SP Member</span>
                         )}
@@ -379,7 +427,7 @@ const WaterRegistration = () => {
                               )}
                               <div className="space-y-1">
                                 <h4 className="font-semibold text-lg" style={{ color: colors.textColor }}>{guest.userName}</h4>
-                                <div className="text-sm" style={{ color: colors.mutedText }}>ID: {guest.userId}</div>
+                                <div className="text-sm" style={{ color: colors.mutedText }}>{guest.userId}</div>
                                 <div className="flex items-center gap-4 text-sm" style={{ color: colors.mutedText }}>
                                   <div className="flex items-center gap-1">
                                     <FaClock size={12} />

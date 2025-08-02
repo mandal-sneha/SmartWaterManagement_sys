@@ -1,47 +1,47 @@
-import { Property } from "../models/property.model.js";
 import { User } from "../models/user.model.js";
 import { Family } from "../models/family.model.js";
+import { Property } from "../models/property.model.js";
 
 export const viewProperties = async (req, res) => {
-  try {
-    const { userid } = req.params;
-    const user = await User.findOne({ userId: userid });
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
+ try {
+   const { userid } = req.params;
+   const user = await User.findOne({ userId: userid });
+   if (!user) {
+     return res.status(404).json({ success: false, message: 'User not found' });
+   }
 
-    const ownedProperties = await Property.find({ rootId: { $in: user.properties || [] } });
-    
-    let currentResidenceProperty = null;
-    if (user.waterId) {
-      const currentRootId = user.waterId.split('_')[0];
-      
-      const isCurrentResidenceOwned = (user.properties || []).includes(currentRootId);
-      
-      if (!isCurrentResidenceOwned) {
-        currentResidenceProperty = await Property.findOne({ rootId: currentRootId });
-      }
-    }
+   const ownedProperties = await Property.find({ rootId: { $in: user.properties || [] } });
+   
+   let currentResidenceProperty = null;
+   if (user.waterId) {
+     const currentRootId = user.waterId.split('_')[0];
+     
+     const isCurrentResidenceOwned = (user.properties || []).includes(currentRootId);
+     
+     if (!isCurrentResidenceOwned) {
+       currentResidenceProperty = await Property.findOne({ rootId: currentRootId });
+     }
+   }
 
-    let allProperties = [...ownedProperties];
-    if (currentResidenceProperty) {
-      allProperties.push(currentResidenceProperty);
-    }
+   let allProperties = [...ownedProperties];
+   if (currentResidenceProperty) {
+     allProperties.push(currentResidenceProperty);
+   }
 
-    allProperties = allProperties.filter((property, index, self) => 
-      index === self.findIndex(p => p.rootId === property.rootId)
-    );
+   allProperties = allProperties.filter((property, index, self) => 
+     index === self.findIndex(p => p.rootId === property.rootId)
+   );
 
-    const enriched = allProperties.map((prop) => ({
-      ...prop.toObject(),
-      tenantCount: Math.max((prop.numberOfTenants || 1) - 1, 0)
-    }));
+   const enriched = allProperties.map((prop) => ({
+     ...prop.toObject(),
+     tenantCount: prop.numberOfTenants || 0
+   }));
 
-    return res.status(200).json({ success: true, properties: enriched });
-  } catch (error) {
-    console.error('Error in viewProperties:', error);
-    return res.status(500).json({ success: false, message: 'Internal server error' });
-  }
+   return res.status(200).json({ success: true, properties: enriched });
+ } catch (error) {
+   console.error('Error in viewProperties:', error);
+   return res.status(500).json({ success: false, message: 'Internal server error' });
+ }
 };
 
 const generateRootId = () => {

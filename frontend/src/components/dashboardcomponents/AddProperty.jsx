@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useTheme } from "../UserDashboard.jsx";
 import {
-  FiArrowLeft,
   FiSearch,
   FiPlus,
   FiMoreVertical,
@@ -90,10 +89,10 @@ const AddProperty = () => {
     }
   };
 
-  const updateTenantCount = (propertyId, delta) => {
+  const updateTenantCount = (propertyId, newCount) => {
     setProperties((prev) =>
       prev.map((p) =>
-        p._id === propertyId ? { ...p, tenantCount: Math.max((p.tenantCount || 0) + delta, 0) } : p
+        p._id === propertyId ? { ...p, tenantCount: newCount } : p
       )
     );
   };
@@ -138,7 +137,8 @@ const AddProperty = () => {
 
   const handleAddTenantSuccess = () => {
     if (selectedPropertyForTenant) {
-      updateTenantCount(selectedPropertyForTenant._id, 1);
+      const currentCount = selectedPropertyForTenant.tenantCount || 0;
+      updateTenantCount(selectedPropertyForTenant._id, currentCount + 1);
       if (expandedPropertyId === selectedPropertyForTenant._id) {
         const propertyTenantsComponent = document.querySelector(
           `[data-property-id="${selectedPropertyForTenant._id}"]`
@@ -187,6 +187,13 @@ const AddProperty = () => {
     return colors.mutedText;
   };
 
+  const getFormattedLocation = (property) => {
+    const parts = [];
+    if (property.municipality) parts.push(property.municipality);
+    if (property.district) parts.push(property.district);
+    return parts.length > 0 ? parts.join(", ") : "No address";
+  };
+
   const filteredProperties = properties.filter(
     (property) =>
       property.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -201,14 +208,6 @@ const AddProperty = () => {
       style={{ backgroundColor: colors.baseColor }}
     >
       <div className="flex items-center mb-5 gap-4 flex-shrink-0">
-        <button
-          className={`bg-transparent text-xl p-2 rounded-lg ${
-            darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"
-          }`}
-          style={{ color: colors.textColor }}
-        >
-          <FiArrowLeft />
-        </button>
         <h1 className="text-2xl font-semibold" style={{ color: colors.textColor }}>
           My Properties
         </h1>
@@ -328,10 +327,10 @@ const AddProperty = () => {
                           {property.rootId || "N/A"}
                         </td>
                         <td className="py-4 px-6 text-sm" style={{ color: colors.textColor }}>
-                          {property.exactLocation || "No address"}
+                          {getFormattedLocation(property)}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
-                          {Math.max(0, property.tenantCount || 0)}
+                          {property.tenantCount || 0}
                         </td>
                         <td className="py-4 px-6 text-sm font-medium" style={{ color: colors.textColor }}>
                           {property.typeOfProperty || "Unknown"}

@@ -8,6 +8,7 @@ import userRoutes from "./src/routes/user.route.js";
 import tenantRoutes from "./src/routes/tenant.route.js";
 import propertyRoutes from "./src/routes/property.route.js";
 import invitationRoutes from "./src/routes/invitation.route.js";
+import waterregistrationRoutes from "./src/routes/waterregistration.route.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use("/user", userRoutes);
 app.use("/tenant", tenantRoutes);
 app.use("/property", propertyRoutes);
 app.use("/invitation", invitationRoutes);
+app.use("/waterregistration", waterregistrationRoutes);
 
 const PORT = process.env.PORT;
 

@@ -34,11 +34,34 @@ const CurrentProperty = ({ selectedProperty, setSelectedProperty, properties, co
                   }}
                 >
                   {properties.map(property => (
-                    <option key={property.id} value={property.id} className="py-2">
-                      {property.name}
+                    <option 
+                      key={property.id} 
+                      value={property.id} 
+                      className="py-2"
+                    >
+                      {property.name} ({property.district}, Ward {property.wardNumber})
                     </option>
                   ))}
                 </select>
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-4">
+                  <span></span>
+                  {selectedProperty && (
+                    <span className={`text-xs px-2 py-1 rounded-full font-semibold mr-8
+                      ${properties.find(p => p.id === selectedProperty)?.label === 'owner' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'}`}>
+                      {properties.find(p => p.id === selectedProperty)?.label === 'owner' ? 'Owner' : 'Tenant'}
+                    </span>
+                  )}
+                </div>
+                {selectedProperty && (
+                  <div 
+                    className={`absolute inset-0 rounded-lg pointer-events-none opacity-20
+                      ${properties.find(p => p.id === selectedProperty)?.label === 'owner' 
+                        ? 'bg-green-100' 
+                        : 'bg-yellow-100'}`}
+                  ></div>
+                )}
               </div>
             </div>
             

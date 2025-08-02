@@ -22,6 +22,7 @@ const DashboardHome = () => {
   const { darkMode, colors } = useTheme();
   const [dashboardData, setDashboardData] = useState(null);
   const [guestData, setGuestData] = useState([]);
+  const [familyMembers, setFamilyMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -47,6 +48,17 @@ const DashboardHome = () => {
           }
         } catch (guestError) {
           setGuestData([]);
+        }
+
+        try {
+          const registrationResponse = await axiosInstance.get(`/waterregistration/${waterId}/get-registration-details`);
+          if (registrationResponse.data.success) {
+            setFamilyMembers(registrationResponse.data.data.primaryMembers || []);
+          } else {
+            setFamilyMembers([]);
+          }
+        } catch (registrationError) {
+          setFamilyMembers([]);
         }
       } catch (err) {
         setError(err.message || 'Failed to fetch dashboard data');
@@ -203,79 +215,91 @@ const DashboardHome = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-bold mb-2" style={{ color: colors.textColor }}>Today's Water Allocation</h2>
-                <p style={{ color: colors.mutedText }}>Daily water distribution and usage</p>
-              </div>
-              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: colors.mutedText }}>
-                <FiDroplet className="w-4 h-4" />
-                <span>Today</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              <div className="text-center p-6 rounded-xl" 
-                   style={{ backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff' }}>
-                <div className="text-3xl font-bold mb-2" style={{ color: colors.primaryBg }}>
-                  {d.waterAllocatedTillNow || '350'}L
-                </div>
-                <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Allocated Till Now</div>
-                <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Total allocated</div>
-              </div>
-              
-              <div className="text-center p-6 rounded-xl" 
-                   style={{ backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4' }}>
-                <div className="text-3xl font-bold mb-2" style={{ color: colors.accent || '#22c55e' }}>
-                  {d.todayGuests || guestData.length}
-                </div>
-                <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Today's Guests</div>
-                <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Invited today</div>
-              </div>
-              
-              <div className="text-center p-6 rounded-xl" 
-                   style={{ backgroundColor: darkMode ? 'rgba(249, 115, 22, 0.1)' : '#fff7ed' }}>
-                <div className="text-3xl font-bold mb-2 text-orange-600">
-                  {d.extraWaterRequested || '200'}L
-                </div>
-                <div className="text-sm font-medium" style={{ color: colors.mutedText }}>Extra Water</div>
-                <div className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>Requested</div>
-              </div>
-            </div>
-
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Today's Guest Details</h3>
               {guestData.length > 0 ? (
-                <div className="space-y-3">
-                  {guestData.map((guest, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                         style={{ 
-                           backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                           borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-                         }}>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full overflow-hidden">
-                          <img 
-                            src={guest.userProfilePhoto} 
-                            alt={guest.userName}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div>
-                          <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
-                          <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="font-bold text-sm" style={{ color: colors.textColor }}>
-                          {formatTime(guest.arrivalTime)}
-                        </div>
-                        <div className="text-xs" style={{ color: colors.mutedText }}>
-                          {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
-                        </div>
+                <div className="space-y-4">
+                  {guestData.filter(guest => guest.status.toLowerCase() === 'accepted').length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-3" style={{ color: colors.accent || '#22c55e' }}>
+                        Accepted Guests
+                      </h4>
+                      <div className="space-y-3">
+                        {guestData
+                          .filter(guest => guest.status.toLowerCase() === 'accepted')
+                          .map((guest, index) => (
+                            <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
+                                 style={{ 
+                                   backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4',
+                                   borderColor: colors.accent || '#22c55e'
+                                 }}>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden">
+                                  <img 
+                                    src={guest.userProfilePhoto} 
+                                    alt={guest.userName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
+                                  <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-sm" style={{ color: colors.textColor }}>
+                                  {formatTime(guest.arrivalTime)}
+                                </div>
+                                <div className="text-xs" style={{ color: colors.mutedText }}>
+                                  {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+                  
+                  {guestData.filter(guest => guest.status.toLowerCase() === 'pending').length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium mb-3" style={{ color: '#f59e0b' }}>
+                        Pending Guests
+                      </h4>
+                      <div className="space-y-3">
+                        {guestData
+                          .filter(guest => guest.status.toLowerCase() === 'pending')
+                          .map((guest, index) => (
+                            <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
+                                 style={{ 
+                                   backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
+                                   borderColor: '#f59e0b'
+                                 }}>
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full overflow-hidden">
+                                  <img 
+                                    src={guest.userProfilePhoto} 
+                                    alt={guest.userName}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div>
+                                  <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
+                                  <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold text-sm" style={{ color: colors.textColor }}>
+                                  {formatTime(guest.arrivalTime)}
+                                </div>
+                                <div className="text-xs" style={{ color: colors.mutedText }}>
+                                  {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-8" style={{ color: colors.mutedText }}>
@@ -287,76 +311,55 @@ const DashboardHome = () => {
 
             <div>
               <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Family Members Present Today</h3>
-              <div className="space-y-3">
-                {(d.familyMembers || [
-                  { name: 'Ravi Patel', userId: 'RP001', waterAllocation: '120L', isSpecial: true },
-                  { name: 'Meera Patel', userId: 'MP002', waterAllocation: '100L', isSpecial: false },
-                  { name: 'Arjun Patel', userId: 'AP003', waterAllocation: '80L', isSpecial: false },
-                  { name: 'Kavya Patel', userId: 'KP004', waterAllocation: '70L', isSpecial: true }
-                ]).map((member, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                       style={{ 
-                         backgroundColor: member.isSpecial 
-                           ? (darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff')
-                           : (darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
-                         borderColor: member.isSpecial 
-                           ? colors.primaryBg 
-                           : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-                       }}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full flex items-center justify-center"
-                           style={{ backgroundColor: member.isSpecial ? colors.primaryBg : (colors.accent || '#22c55e') }}>
-                        {member.isSpecial ? (
-                          <FiStar className="w-5 h-5 text-white" />
-                        ) : (
-                          <FiUser className="w-5 h-5 text-white" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <div className="font-medium" style={{ color: colors.textColor }}>{member.name}</div>
-                          {member.isSpecial && (
-                            <div className="flex items-center">
-                              <input 
-                                type="checkbox" 
-                                checked={member.isSpecial} 
-                                readOnly
-                                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                              />
-                              <label className="ml-1 text-xs font-medium" style={{ color: colors.primaryBg }}>
-                                Special
-                              </label>
-                            </div>
-                          )}
+              {familyMembers.length > 0 ? (
+                <div className="space-y-3">
+                  {familyMembers.map((member, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
+                         style={{ 
+                           backgroundColor: member.isSpecial 
+                             ? (darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff')
+                             : (darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
+                           borderColor: member.isSpecial 
+                             ? colors.primaryBg 
+                             : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
+                         }}>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full overflow-hidden">
+                          <img 
+                            src={member.userProfilePhoto} 
+                            alt={member.userName}
+                            className="w-full h-full object-cover"
+                          />
                         </div>
-                        <div className="text-xs" style={{ color: colors.mutedText }}>ID: {member.userId}</div>
-                        <div className="text-xs" style={{ color: colors.mutedText, opacity: 0.7 }}>{member.relation}</div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <div className="font-medium" style={{ color: colors.textColor }}>{member.userName}</div>
+                            {member.isSpecial && (
+                              <div className="flex items-center">
+                                <input 
+                                  type="checkbox" 
+                                  checked={member.isSpecial} 
+                                  readOnly
+                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                                />
+                                <label className="ml-1 text-xs font-medium" style={{ color: colors.primaryBg }}>
+                                  Special
+                                </label>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs" style={{ color: colors.mutedText }}>ID: {member.userId}</div>
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-bold text-lg" style={{ color: colors.textColor }}>{member.waterAllocation}</div>
-                      <div className="text-xs" style={{ color: colors.mutedText }}>Allocated</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-4 p-4 rounded-lg border-2 border-dashed"
-                   style={{ 
-                     backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.05)' : '#f0f9ff',
-                     borderColor: colors.primaryBg
-                   }}>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-semibold" style={{ color: colors.textColor }}>Total Family Water Today</div>
-                    <div className="text-xs" style={{ color: colors.mutedText }}>Special Members: 2 • Regular Members: 2</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold" style={{ color: colors.primaryBg }}>370L</div>
-                    <div className="text-xs" style={{ color: colors.mutedText }}>Total allocated</div>
-                  </div>
+                  ))}
                 </div>
-              </div>
+              ) : (
+                <div className="text-center py-8" style={{ color: colors.mutedText }}>
+                  <FiUser className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>Family has not registered for water today</p>
+                </div>
+              )}
             </div>
           </div>
 

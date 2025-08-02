@@ -103,7 +103,7 @@ const FamilyMemberDetails = ({
                       )}
                       <div>
                         <h4 className="font-semibold text-gray-900">{member.userName}</h4>
-                        <p className="text-sm text-gray-500">ID: {member.userId}</p>
+                        <p className="text-sm text-gray-500">{member.userId}</p>
                       </div>
                     </div>
                     <div className="text-gray-400">

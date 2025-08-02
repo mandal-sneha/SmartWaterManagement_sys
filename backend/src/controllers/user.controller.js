@@ -338,40 +338,40 @@ export const addFamilyMember = async (req, res) => {
 export const getCurrentDayGuests = async (req, res) => {
   try {
     const { waterid } = req.params;
-    const invitation = await Invitation.findOne({
-      hostwaterId: waterid,
-    }).lean();
-    if (!invitation) return res.status(200).json([]);
-    const {
-      invitedGuests = {},
-      arrivalTime = {},
-      stayDuration = {},
-    } = invitation;
-    const accepted = Object.entries(invitedGuests)
-      .filter(
-        ([, status]) =>
-          typeof status === "string" &&
-          status.trim().toLowerCase() === "accepted"
-      )
-      .map(([id]) => id);
-    if (!accepted.length) return res.status(200).json([]);
-    const payload = await Promise.all(
-      accepted.map(async (id) => {
-        const u = await User.findOne({ userId: id })
-          .lean()
-          .select("userId userName userProfilePhoto");
-        if (!u) return null;
-        return {
-          userId: u.userId,
-          userName: u.userName,
-          userProfilePhoto: u.userProfilePhoto,
-          arrivalTime: arrivalTime[id] || "",
-          stayDuration: (stayDuration[id] || "").replace(/\s*day$/i, ""),
-        };
-      })
-    );
-    return res.status(200).json(payload.filter(Boolean));
+
+    const invitation = await Invitation.findOne({ hostwaterId: waterid }).lean();
+
+    if (!invitation) {
+      return res.status(200).json([]);
+    }
+
+    const invitedGuests = invitation.invitedGuests || {};
+    const arrivalTime = invitation.arrivalTime || {};
+    const stayDuration = invitation.stayDuration || {};
+
+    const guestIds = Object.keys(invitedGuests);
+
+    if (!guestIds.length) {
+      return res.status(200).json([]);
+    }
+
+    const users = await User.find({ userId: { $in: guestIds } })
+      .lean()
+      .select("userId userName userProfilePhoto");
+
+    const payload = users.map((u) => ({
+      userId: u.userId,
+      userName: u.userName,
+      userProfilePhoto: u.userProfilePhoto,
+      arrivalTime: arrivalTime[u.userId] || "",
+      stayDuration: (stayDuration[u.userId] || "").replace(/\s*day$/i, ""),
+      status: invitedGuests[u.userId] || ""
+    }));
+
+    return res.status(200).json(payload);
+
   } catch (e) {
+    console.error("Error in getCurrentDayGuests:", e);
     return res.status(500).json({ message: e.message });
   }
 };
@@ -613,27 +613,47 @@ export const getProfileDetails = async (req, res) => {
 
     const propertyRootIds = user.properties || [];
 
-    const propertyDocs = await Property.find({
+    const ownerPropertiesDocs = await Property.find({
       rootId: { $in: propertyRootIds },
     }).lean();
 
-    const properties = propertyDocs.map((p) => ({
+    const ownerProperties = ownerPropertiesDocs.map((p) => ({
       propertyName: p.propertyName,
       municipality: p.municipality,
       wardNumber: p.wardNumber,
       district: p.district,
       numberOfTenants: p.numberOfTenants,
       typeOfProperty: p.typeOfProperty,
+      label: "owner",
     }));
+
+    const waterIdParts = user.waterId?.split("_") || [];
+    let tenantProperty = null;
+
+    if (waterIdParts[1] && waterIdParts[1] !== "000") {
+      const tenantRootId = waterIdParts[0];
+      const tenantPropertyDoc = await Property.findOne({ rootId: tenantRootId }).lean();
+      if (tenantPropertyDoc) {
+        tenantProperty = {
+          propertyName: tenantPropertyDoc.propertyName,
+          municipality: tenantPropertyDoc.municipality,
+          wardNumber: tenantPropertyDoc.wardNumber,
+          district: tenantPropertyDoc.district,
+          numberOfTenants: tenantPropertyDoc.numberOfTenants,
+          typeOfProperty: tenantPropertyDoc.typeOfProperty,
+          label: "tenant",
+        };
+      }
+    }
+
+    const properties = tenantProperty ? [...ownerProperties, tenantProperty] : ownerProperties;
 
     return res.status(200).json({
       user: userDetails,
       properties,
     });
   } catch (error) {
-    return res
-      .status(500)
-      .json({ message: "Server error", error: error.message });
+    return res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 

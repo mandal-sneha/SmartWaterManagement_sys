@@ -8,8 +8,8 @@ import FamilyMemberDetails from './profilepagecomponents/FamilyMemberDetails.jsx
 
 const useTheme = () => {
   const colors = {
-    baseColor: '#f8fafc', cardBg: '#ffffff', textColor: '#1e293b', mutedText: '#64748b', 
-    borderColor: '#e2e8f0', primaryBg: '#3b82f6', primaryHover: '#2563eb', secondaryBg: '#6366f1', 
+    baseColor: '#f8fafc', cardBg: '#ffffff', textColor: '#1e293b', mutedText: '#64748b',
+    borderColor: '#e2e8f0', primaryBg: '#3b82f6', primaryHover: '#2563eb', secondaryBg: '#6366f1',
     secondaryHover: '#4f46e5', accent: '#10b981', accentHover: '#059669', danger: '#ef4444', dangerHover: '#dc2626'
   };
   return { colors };
@@ -18,7 +18,7 @@ const useTheme = () => {
 const Profile = () => {
   const { colors } = useTheme();
   const { userid } = useParams();
-  
+
   const [user, setUser] = useState({
     userId: '', userName: '', userProfilePhoto: null, aadharNo: '',
     email: '', address: '', waterId: ''
@@ -30,7 +30,7 @@ const Profile = () => {
   const [updateLoading, setUpdateLoading] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedUser, setEditedUser] = useState({...user});
+  const [editedUser, setEditedUser] = useState({ ...user });
   const [expandedMember, setExpandedMember] = useState(null);
   const [selectedProperty, setSelectedProperty] = useState('');
   const [showAddMember, setShowAddMember] = useState(false);
@@ -63,7 +63,7 @@ const Profile = () => {
       try {
         const storedUser = JSON.parse(localStorage.getItem('user'));
         const userIdToFetch = userid || storedUser?.userId;
-        
+
         if (!userIdToFetch) {
           setError('User ID not found');
           setLoading(false);
@@ -90,19 +90,20 @@ const Profile = () => {
           district: prop.district,
           wardNumber: prop.wardNumber,
           tenants: prop.numberOfTenants,
-          propertyType: prop.typeOfProperty
+          propertyType: prop.typeOfProperty,
+          label: prop.label
         }));
 
         setUser(transformedUser);
         setProperties(transformedProperties);
         setEditedUser(transformedUser);
-        
+
         if (transformedProperties.length > 0) {
           setSelectedProperty(transformedProperties[0].id);
         }
-        
+
         await fetchFamilyMembers(userIdToFetch);
-        
+
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch profile details');
@@ -114,13 +115,13 @@ const Profile = () => {
     fetchProfileDetails();
   }, [userid]);
 
-  const handleEdit = () => { setIsEditing(true); setEditedUser({...user}); };
-  
+  const handleEdit = () => { setIsEditing(true); setEditedUser({ ...user }); };
+
   const handleSave = async () => {
     try {
       setUpdateLoading(true);
       setError(null);
-      
+
       const storedUser = JSON.parse(localStorage.getItem('user'));
       const userIdToUpdate = userid || storedUser?.userId;
 
@@ -137,7 +138,7 @@ const Profile = () => {
       };
 
       const response = await axiosInstance.put(`/user/${userIdToUpdate}/update-profile`, updateData);
-      
+
       if (response.data.success) {
         const updatedUserData = response.data.user;
         const newUser = {
@@ -149,11 +150,11 @@ const Profile = () => {
           address: user.address,
           waterId: updatedUserData.waterId || user.waterId
         };
-        
+
         setUser(newUser);
         setEditedUser(newUser);
         setIsEditing(false);
-        
+
         const updatedStoredUser = {
           email: updatedUserData.email,
           userId: updatedUserData.userId,
@@ -171,8 +172,8 @@ const Profile = () => {
       setUpdateLoading(false);
     }
   };
-  
-  const handleCancel = () => { setEditedUser({...user}); setIsEditing(false); };
+
+  const handleCancel = () => { setEditedUser({ ...user }); setIsEditing(false); };
   const handleInputChange = (field, value) => { setEditedUser(prev => ({ ...prev, [field]: value })); };
   const toggleMemberExpansion = (userId) => { setExpandedMember(expandedMember === userId ? null : userId); };
 
@@ -199,9 +200,9 @@ const Profile = () => {
       try {
         const storedUser = JSON.parse(localStorage.getItem('user'));
         const currentUserId = userid || storedUser?.userId;
-        
+
         const response = await axiosInstance.post(`/user/${currentUserId}/${newMemberUserId.trim()}/add-family-member`);
-        
+
         if (response.status === 200) {
           await fetchFamilyMembers(currentUserId);
           setNewMemberUserId('');
@@ -240,8 +241,8 @@ const Profile = () => {
       <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
         <div className="text-center">
           <p className="text-red-500 text-lg mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Retry
@@ -292,7 +293,6 @@ const Profile = () => {
               <UserDetails {...sharedProps} />
               <CurrentProperty {...sharedProps} />
             </div>
-            
             <div className="w-full lg:col-span-1">
               <FamilyMemberDetails {...sharedProps} />
             </div>
