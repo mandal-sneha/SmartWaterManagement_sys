@@ -265,6 +265,7 @@ const UserDashboard = () => {
         color: theme.colors.textColor
       }}
     >
+      {/* Sidebar */}
       <div
         className="flex flex-col flex-shrink-0 transition-all duration-300 gap-2 justify-between h-full relative"
         style={{
@@ -296,12 +297,12 @@ const UserDashboard = () => {
                 </div>
                 <div className="flex flex-col">
                   <h1 
-                     className="text-2xl font-bold"
+                    className="text-2xl font-bold"
                     style={{
-                    fontFamily: 'Inter, system-ui, sans-serif',
-                    letterSpacing: '-0.02em',
-                    color: theme.darkMode ? '#ffffff' : '#ffffff'
-                   }}
+                      fontFamily: 'Inter, system-ui, sans-serif',
+                      letterSpacing: '-0.02em',
+                      color: theme.darkMode ? '#ffffff' : '#ffffff'
+                    }}
                   >
                     HydraOne
                   </h1>
@@ -474,15 +475,9 @@ const UserDashboard = () => {
             <button
               onClick={handleInvitations}
               className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200 cursor-pointer"
-              style={{
-                color: theme.colors.textColor
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = theme.colors.hoverBg;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
+              style={{ color: theme.colors.textColor }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = theme.colors.hoverBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
               title="View Invitations"
             >
               <FiMail />
@@ -491,15 +486,9 @@ const UserDashboard = () => {
             <button
               onClick={theme.toggleDarkMode}
               className="bg-transparent border-none text-xl p-2 rounded-full transition-all duration-200"
-              style={{
-                color: theme.colors.textColor
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = theme.colors.hoverBg;
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
+              style={{ color: theme.colors.textColor }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = theme.colors.hoverBg; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
               title={theme.darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             >
               {theme.darkMode ? <FiSun /> : <FiMoon />}

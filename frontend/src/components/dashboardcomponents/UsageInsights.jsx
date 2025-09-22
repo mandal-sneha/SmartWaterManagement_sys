@@ -1,30 +1,40 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, ResponsiveContainer } from 'recharts'
 import { ChevronDown, ChevronRight, Droplets, Calendar, Users, AlertTriangle } from 'lucide-react'
+import { ThemeContext } from '../UserDashboard'
 
 const useTheme = () => {
-  const darkMode = false;
+  const context = useContext(ThemeContext);
+  if (!context) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  
+  const { darkMode } = context;
+  
+  // Enhanced colors specifically for UsageInsights with better dark mode contrast
   const colors = {
-    baseColor: '#f9fafe',
-    cardBg: 'rgba(255, 255, 255, 0.95)',
-    textColor: '#2d3748',
-    mutedText: '#718096',
-    borderColor: 'rgba(226, 232, 240, 0.8)',
-    primaryBg: '#667eea',
-    primaryHover: '#5a67d8',
-    secondaryBg: '#9f7aea',
-    secondaryHover: '#8b5cf6',
-    accent: '#48bb78',
-    accentHover: '#38a169',
-    danger: '#f56565',
-    dangerHover: '#e53e3e',
-    chartLine: '#4fd1c5',
-    chartBar: '#9f7aea',
-    chartPie1: '#667eea',
-    chartPie2: '#f6ad55',
-    chartPie3: '#68d391',
-    highlight: 'rgba(102, 126, 234, 0.1)'
+    baseColor: darkMode ? '#0f0f23' : '#f8f6ff',
+    cardBg: darkMode ? '#1a1a2e' : '#ffffff',
+    textColor: darkMode ? '#e2e8f0' : '#4b0082',
+    mutedText: darkMode ? '#94a3b8' : '#666666',
+    borderColor: darkMode ? '#334155' : '#e0e0e0',
+    primaryBg: darkMode ? '#4c6ef5' : '#6e8efb',
+    primaryHover: darkMode ? '#3b5bdb' : '#5a67d8',
+    secondaryBg: darkMode ? '#7c3aed' : '#a777e3',
+    secondaryHover: darkMode ? '#6d28d9' : '#8b5cf6',
+    accent: darkMode ? '#10b981' : '#48bb78',
+    accentHover: darkMode ? '#059669' : '#38a169',
+    danger: darkMode ? '#ef4444' : '#f56565',
+    dangerHover: darkMode ? '#dc2626' : '#e53e3e',
+    chartLine: darkMode ? '#06b6d4' : '#4fd1c5',
+    chartBar: darkMode ? '#8b5cf6' : '#9f7aea',
+    chartPie1: darkMode ? '#4c6ef5' : '#667eea',
+    chartPie2: darkMode ? '#f59e0b' : '#f6ad55',
+    chartPie3: darkMode ? '#10b981' : '#68d391',
+    highlight: darkMode ? 'rgba(71, 85, 105, 0.3)' : 'rgba(102, 126, 234, 0.1)',
+    hoverBg: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.1)'
   };
+  
   return { darkMode, colors };
 };
 
@@ -58,6 +68,12 @@ const UsageInsights = () => {
     { month: 'Oct', usage: 9600 }, { month: 'Nov', usage: 8900 }, { month: 'Dec', usage: 9100 }
   ]
 
+  const generateFineAmount = () => {
+    // Generate random fine amounts between ₹50 to ₹500
+    const amounts = [50, 75, 100, 150, 200, 250, 300, 350, 400, 500];
+    return amounts[Math.floor(Math.random() * amounts.length)];
+  }
+
   const generateMonthData = (days) => {
     const data = []
     for (let i = 1; i <= days; i++) {
@@ -66,7 +82,8 @@ const UsageInsights = () => {
         date: i,
         waterUsed: Math.floor(Math.random() * 200) + 250,
         guests: Math.floor(Math.random() * 8),
-        hasFine: hasFine
+        hasFine: hasFine,
+        fineAmount: hasFine ? generateFineAmount() : 0
       })
     }
     return data
@@ -100,7 +117,7 @@ const UsageInsights = () => {
         <div className="p-3 rounded-lg shadow-md border" style={{ 
           backgroundColor: colors.cardBg, 
           borderColor: colors.borderColor,
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.05)'
+          boxShadow: darkMode ? '0 4px 6px rgba(0, 0, 0, 0.3)' : '0 4px 6px rgba(0, 0, 0, 0.05)'
         }}>
           <p className="font-medium" style={{ color: colors.textColor }}>{`${label}: ${payload[0].value}L`}</p>
         </div>
@@ -117,10 +134,10 @@ const UsageInsights = () => {
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
                 <Droplets className="w-5 h-5" style={{ color: colors.primaryBg }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>Today's Usage</h3>
@@ -160,10 +177,10 @@ const UsageInsights = () => {
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(79, 209, 197, 0.1)' }}>
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(6, 182, 212, 0.3)' : 'rgba(79, 209, 197, 0.1)' }}>
                 <Calendar className="w-5 h-5" style={{ color: colors.chartLine }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>30-Day Trend</h3>
@@ -209,10 +226,10 @@ const UsageInsights = () => {
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
-            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(159, 122, 234, 0.1)' }}>
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(124, 58, 237, 0.3)' : 'rgba(159, 122, 234, 0.1)' }}>
                 <Calendar className="w-5 h-5" style={{ color: colors.chartBar }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>Yearly Overview</h3>
@@ -256,10 +273,10 @@ const UsageInsights = () => {
         <div className="rounded-xl p-5 mb-8" style={{ 
           backgroundColor: colors.cardBg,
           border: `1px solid ${colors.borderColor}`,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+          boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
         }}>
           <div className="flex items-center mb-6">
-            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
+            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
               <Calendar className="w-5 h-5" style={{ color: colors.primaryBg }} />
             </div>
             <h2 className="text-xl font-semibold" style={{ color: colors.textColor }}>Monthly Breakdown</h2>
@@ -319,8 +336,12 @@ const UsageInsights = () => {
                           key={day.date}
                           className="p-3 rounded-lg transition-all duration-200 hover:shadow-sm"
                           style={{
-                            backgroundColor: day.hasFine ? 'rgba(245, 101, 101, 0.1)' : colors.cardBg,
-                            border: `1px solid ${day.hasFine ? 'rgba(245, 101, 101, 0.2)' : colors.borderColor}`,
+                            backgroundColor: day.hasFine 
+                              ? (darkMode ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 101, 101, 0.1)')
+                              : colors.cardBg,
+                            border: `1px solid ${day.hasFine 
+                              ? (darkMode ? 'rgba(239, 68, 68, 0.3)' : 'rgba(245, 101, 101, 0.2)')
+                              : colors.borderColor}`,
                           }}
                         >
                           <div className="flex justify-between items-center mb-2">
@@ -343,7 +364,7 @@ const UsageInsights = () => {
                           
                           {day.hasFine && (
                             <div className="mt-2 text-xs font-medium" style={{ color: colors.danger }}>
-                              ⚠️ Water limit exceeded
+                              ⚠️ Fine: ₹{day.fineAmount}
                             </div>
                           )}
                         </div>
@@ -360,10 +381,10 @@ const UsageInsights = () => {
         <div className="rounded-xl p-6 text-center" style={{ 
           backgroundColor: colors.cardBg,
           border: `1px solid ${colors.borderColor}`,
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.02)'
+          boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
         }}>
           <div className="flex items-center justify-center mb-3">
-            <div className="p-2 rounded-full mr-2" style={{ backgroundColor: 'rgba(102, 126, 234, 0.1)' }}>
+            <div className="p-2 rounded-full mr-2" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
               <Droplets className="w-5 h-5" style={{ color: colors.primaryBg }} />
             </div>
             <span className="text-xl">💧</span>

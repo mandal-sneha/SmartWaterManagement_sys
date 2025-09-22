@@ -102,7 +102,18 @@ const ViewInvitation = ({ isOpen, onClose, theme }) => {
 
         <div className="p-6 overflow-y-auto flex-grow">
           {isLoading ? (
-            <div className="text-center py-12">Loading invitations...</div>
+            <div className="text-center py-12">
+              <div className="relative">
+                <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" 
+                     style={{ 
+                       borderColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
+                       borderTopColor: colors.primaryBg 
+                     }}></div>
+                <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-pulse mx-auto" 
+                     style={{ borderBottomColor: '#22c55e' }}></div>
+              </div>
+              <p className="text-lg font-medium" style={{ color: colors.textColor }}>Loading invitations...</p>
+            </div>
           ) : invitations.length === 0 ? (
             <div className="text-center py-12">
               <h3 className="text-xl font-semibold mb-2" style={{ color: colors.textColor }}>No Pending Invitations</h3>
@@ -127,8 +138,26 @@ const ViewInvitation = ({ isOpen, onClose, theme }) => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      {invitation.invitedGuests[currentUser.userId] === 'accepted' && <span className="bg-green-100 text-green-800 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"><Check size={16} />Accepted</span>}
-                      {invitation.invitedGuests[currentUser.userId] === 'declined' && <span className="bg-red-100 text-red-800 px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"><XCircle size={16} />Declined</span>}
+                      {invitation.invitedGuests[currentUser.userId] === 'accepted' && (
+                        <span className="px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
+                              style={{ 
+                                backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : '#f0fdf4', 
+                                color: darkMode ? '#6ee7b7' : '#059669',
+                                border: darkMode ? '1px solid #059669' : '1px solid #10b981'
+                              }}>
+                          <Check size={16} />Accepted
+                        </span>
+                      )}
+                      {invitation.invitedGuests[currentUser.userId] === 'declined' && (
+                        <span className="px-4 py-2 rounded-full text-sm font-medium flex items-center gap-2"
+                              style={{ 
+                                backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fef2f2', 
+                                color: darkMode ? '#fca5a5' : '#dc2626',
+                                border: darkMode ? '1px solid #dc2626' : '1px solid #ef4444'
+                              }}>
+                          <XCircle size={16} />Declined
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -159,10 +188,26 @@ const ViewInvitation = ({ isOpen, onClose, theme }) => {
 
                   {invitation.invitedGuests[currentUser.userId] === 'pending' && (
                     <div className="flex flex-wrap gap-3">
-                      <button onClick={() => handleStatusChange(invitation._id, 'accepted')} className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                      <button 
+                        onClick={() => handleStatusChange(invitation._id, 'accepted')} 
+                        className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer hover:shadow-lg"
+                        style={{ 
+                          backgroundColor: darkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4', 
+                          color: darkMode ? '#6ee7b7' : '#059669',
+                          border: darkMode ? '1px solid #059669' : '1px solid #10b981'
+                        }}
+                      >
                         <Check size={18} /> Accept
                       </button>
-                      <button onClick={() => handleStatusChange(invitation._id, 'declined')} className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer">
+                      <button 
+                        onClick={() => handleStatusChange(invitation._id, 'declined')} 
+                        className="px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 flex items-center gap-2 cursor-pointer hover:shadow-lg"
+                        style={{ 
+                          backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fef2f2', 
+                          color: darkMode ? '#fca5a5' : '#dc2626',
+                          border: darkMode ? '1px solid #dc2626' : '1px solid #ef4444'
+                        }}
+                      >
                         <XCircle size={18} /> Decline
                       </button>
                     </div>
@@ -175,8 +220,20 @@ const ViewInvitation = ({ isOpen, onClose, theme }) => {
 
         <div className="border-t p-6" style={{ borderColor: colors.borderColor, backgroundColor: darkMode ? 'rgba(30, 41, 59, 0.5)' : '#f8fafc' }}>
           <div className="flex justify-between items-center">
-            <p className="text-sm font-medium" style={{ color: colors.mutedText }}>{invitations.filter(inv => inv.invitedGuests[currentUser?.userId] === 'pending').length} pending invitation(s)</p>
-            <button onClick={onClose} className="px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg cursor-pointer" style={{ backgroundColor: colors.primaryBg, color: 'white' }}>Close</button>
+            <p className="text-sm font-medium" style={{ color: colors.mutedText }}>
+              {invitations.filter(inv => inv.invitedGuests[currentUser?.userId] === 'pending').length} pending invitation(s)
+            </p>
+            <button 
+              onClick={onClose} 
+              className="px-6 py-2 rounded-xl font-semibold transition-all duration-300 hover:shadow-lg cursor-pointer"
+              style={{ 
+                backgroundColor: darkMode ? 'rgba(8, 145, 178, 0.2)' : '#e0f2fe', 
+                color: darkMode ? '#67e8f9' : '#0891b2',
+                border: darkMode ? '1px solid #0891b2' : '1px solid #06b6d4'
+              }}
+            >
+              Close
+            </button>
           </div>
         </div>
       </div>

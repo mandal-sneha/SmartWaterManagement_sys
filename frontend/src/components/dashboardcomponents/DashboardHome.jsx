@@ -12,7 +12,8 @@ import {
   FiAlertCircle,
   FiPlus,
   FiUser,
-  FiStar
+  FiStar,
+  FiSettings
 } from 'react-icons/fi';
 import { useTheme } from '../UserDashboard';
 import desertCactus from '../../assets/desert-cactus.svg';
@@ -74,6 +75,12 @@ const DashboardHome = () => {
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
     const period = hour24 >= 12 ? 'PM' : 'AM';
     return `${hour12}:${minutes} ${period}`;
+  };
+
+  const handleManageGuests = () => {
+    // Add your navigation logic here
+    console.log('Manage Guests clicked');
+    // Example: navigate('/manage-guests') or setCurrentPage('manage-guests')
   };
 
   if (loading) return (
@@ -419,16 +426,22 @@ const DashboardHome = () => {
                     className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300`}
                     style={{
                       backgroundColor: time === d.nextSupplyTime 
-                        ? colors.primaryBg
+                        ? (darkMode ? 'rgba(234, 88, 12, 0.2)' : '#fff7ed')
                         : darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                      color: time === d.nextSupplyTime ? '#fff' : colors.textColor
+                      color: time === d.nextSupplyTime 
+                        ? (darkMode ? '#fdba74' : '#ea580c') 
+                        : colors.textColor,
+                      border: time === d.nextSupplyTime 
+                        ? (darkMode ? '1px solid #ea580c' : '1px solid #fb923c') 
+                        : 'none'
                     }}
                   >
                     <span className="font-medium">{time}</span>
                     {time === d.nextSupplyTime && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-medium">NEXT</span>
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 rounded-full animate-pulse" 
+                             style={{ backgroundColor: darkMode ? '#fdba74' : '#ea580c' }}></div>
                       </div>
                     )}
                   </div>
@@ -439,10 +452,26 @@ const DashboardHome = () => {
             <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
               <h3 className="text-lg font-bold mb-4" style={{ color: colors.textColor }}>Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center justify-center gap-3 p-3 text-white rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        style={{ backgroundColor: colors.accent || '#22c55e' }}>
+                <button className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                        style={{ 
+                          backgroundColor: darkMode ? 'rgba(8, 145, 178, 0.2)' : '#e0f2fe', 
+                          color: darkMode ? '#67e8f9' : '#0891b2',
+                          border: darkMode ? '1px solid #0891b2' : '1px solid #06b6d4'
+                        }}>
                   <FiFileText className="w-5 h-5" />
                   Payment History
+                </button>
+                <button 
+                  onClick={handleManageGuests}
+                  className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                  style={{ 
+                    backgroundColor: darkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4', 
+                    color: darkMode ? '#6ee7b7' : '#059669',
+                    border: darkMode ? '1px solid #059669' : '1px solid #10b981'
+                  }}
+                >
+                  <FiSettings className="w-5 h-5" />
+                  Manage Guests
                 </button>
               </div>
             </div>
