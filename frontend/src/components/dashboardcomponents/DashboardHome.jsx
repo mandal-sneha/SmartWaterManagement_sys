@@ -1,18 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { axiosInstance } from '../../lib/axios.js';
 import {
-  FiDroplet, 
-  FiFileText, 
-  FiTruck, 
-  FiCreditCard, 
+  FiDroplet,
+  FiFileText,
+  FiTruck,
+  FiCreditCard,
   FiUsers,
-  FiTrendingUp,
   FiCalendar,
   FiCheck,
   FiAlertCircle,
-  FiPlus,
   FiUser,
-  FiStar,
   FiSettings
 } from 'react-icons/fi';
 import { useTheme } from '../UserDashboard';
@@ -33,7 +30,7 @@ const DashboardHome = () => {
         const userObject = localStorage.getItem('user');
         const userId = userObject ? JSON.parse(userObject).userId : localStorage.getItem('userId');
         const waterId = userObject ? JSON.parse(userObject).waterId : null;
-        
+
         if (!userId) throw new Error('User ID not found');
         if (!waterId) throw new Error('Water ID not found');
 
@@ -70,6 +67,7 @@ const DashboardHome = () => {
   }, []);
 
   const formatTime = (time24) => {
+    if (!time24 || !time24.includes(':')) return 'Invalid Time';
     const [hours, minutes] = time24.split(':');
     const hour24 = parseInt(hours);
     const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
@@ -78,33 +76,31 @@ const DashboardHome = () => {
   };
 
   const handleManageGuests = () => {
-    // Add your navigation logic here
     console.log('Manage Guests clicked');
-    // Example: navigate('/manage-guests') or setCurrentPage('manage-guests')
   };
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: darkMode ? '#1a1a1a' : '#f8fafc' }}>
       <div className="text-center">
         <div className="relative">
-          <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" 
-               style={{ 
+          <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4"
+               style={{
                  borderColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
-                 borderTopColor: colors.primaryBg 
+                 borderTopColor: colors.primaryBg
                }}></div>
-          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-pulse mx-auto" 
+          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-pulse mx-auto"
                style={{ borderBottomColor: colors.accent }}></div>
         </div>
         <p className="text-lg font-medium" style={{ color: colors.textColor }}>Loading your dashboard...</p>
       </div>
     </div>
   );
-  
+
   if (error) return (
-    <div className="min-h-screen flex items-center justify-center" 
+    <div className="min-h-screen flex items-center justify-center"
          style={{ backgroundColor: darkMode ? '#1a1a1a' : '#fef2f2' }}>
       <div className="text-center rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" 
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
              style={{ backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2' }}>
           <FiAlertCircle className="w-8 h-8 text-red-500" />
         </div>
@@ -113,12 +109,12 @@ const DashboardHome = () => {
     </div>
   );
 
-  if (dashboardData?.hasWaterId === false) {
+  if (!dashboardData || dashboardData.hasWaterId === false) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" 
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
            style={{ backgroundColor: darkMode ? '#0f172a' : '#f1f5f9' }}>
         <div className="rounded-3xl p-12 shadow-xl max-w-md" style={{ backgroundColor: colors.baseColor }}>
-          <div className="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-8" 
+          <div className="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-8"
                style={{ backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.2)' : '#dbeafe' }}>
             <img src={desertCactus} alt="Empty Dashboard" className="w-20 h-20 opacity-90" />
           </div>
@@ -138,11 +134,12 @@ const DashboardHome = () => {
   }
 
   const d = dashboardData;
+  console.log(d);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
-      <div className="shadow-sm border-b" 
-           style={{ 
+      <div className="shadow-sm border-b"
+           style={{
              backgroundColor: colors.baseColor,
              borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
            }}>
@@ -236,14 +233,14 @@ const DashboardHome = () => {
                           .filter(guest => guest.status.toLowerCase() === 'accepted')
                           .map((guest, index) => (
                             <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                                 style={{ 
+                                 style={{
                                    backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4',
                                    borderColor: colors.accent || '#22c55e'
                                  }}>
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden">
-                                  <img 
-                                    src={guest.userProfilePhoto} 
+                                  <img
+                                    src={guest.userProfilePhoto}
                                     alt={guest.userName}
                                     className="w-full h-full object-cover"
                                   />
@@ -266,7 +263,7 @@ const DashboardHome = () => {
                       </div>
                     </div>
                   )}
-                  
+
                   {guestData.filter(guest => guest.status.toLowerCase() === 'pending').length > 0 && (
                     <div>
                       <h4 className="text-sm font-medium mb-3" style={{ color: '#f59e0b' }}>
@@ -277,14 +274,14 @@ const DashboardHome = () => {
                           .filter(guest => guest.status.toLowerCase() === 'pending')
                           .map((guest, index) => (
                             <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                                 style={{ 
+                                 style={{
                                    backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
                                    borderColor: '#f59e0b'
                                  }}>
                               <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full overflow-hidden">
-                                  <img 
-                                    src={guest.userProfilePhoto} 
+                                  <img
+                                    src={guest.userProfilePhoto}
                                     alt={guest.userName}
                                     className="w-full h-full object-cover"
                                   />
@@ -322,18 +319,18 @@ const DashboardHome = () => {
                 <div className="space-y-3">
                   {familyMembers.map((member, index) => (
                     <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                         style={{ 
-                           backgroundColor: member.isSpecial 
+                         style={{
+                           backgroundColor: member.isSpecial
                              ? (darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff')
                              : (darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
-                           borderColor: member.isSpecial 
-                             ? colors.primaryBg 
+                           borderColor: member.isSpecial
+                             ? colors.primaryBg
                              : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
                          }}>
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full overflow-hidden">
-                          <img 
-                            src={member.userProfilePhoto} 
+                          <img
+                            src={member.userProfilePhoto}
                             alt={member.userName}
                             className="w-full h-full object-cover"
                           />
@@ -343,9 +340,9 @@ const DashboardHome = () => {
                             <div className="font-medium" style={{ color: colors.textColor }}>{member.userName}</div>
                             {member.isSpecial && (
                               <div className="flex items-center">
-                                <input 
-                                  type="checkbox" 
-                                  checked={member.isSpecial} 
+                                <input
+                                  type="checkbox"
+                                  checked={member.isSpecial}
                                   readOnly
                                   className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                                 />
@@ -382,19 +379,19 @@ const DashboardHome = () => {
                   <p className="text-xs" style={{ color: colors.mutedText }}>Current cycle</p>
                 </div>
               </div>
-              
+
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg" 
+                <div className="flex justify-between items-center p-3 rounded-lg"
                      style={{ backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Current Bill</span>
                   <span className="font-bold" style={{ color: colors.textColor }}>₹{d.billThisMonth}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg" 
+                <div className="flex justify-between items-center p-3 rounded-lg"
                      style={{ backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Last Month</span>
                   <span className="font-bold" style={{ color: colors.textColor }}>₹{d.lastMonthBill}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg" 
+                <div className="flex justify-between items-center p-3 rounded-lg"
                      style={{ backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4' }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Status</span>
                   <div className="flex items-center gap-2">
@@ -418,29 +415,29 @@ const DashboardHome = () => {
                   <p className="text-xs" style={{ color: colors.mutedText }}>Today's timeline</p>
                 </div>
               </div>
-              
+
               <div className="space-y-3">
-                {['8 AM', '12 PM', '3 PM'].map((time, index) => (
-                  <div 
+                {['8 AM', '12 PM', '3 PM'].map((time) => (
+                  <div
                     key={time}
                     className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300`}
                     style={{
-                      backgroundColor: time === d.nextSupplyTime 
+                      backgroundColor: time === d.nextSupplyTime.split(' ')[0]
                         ? (darkMode ? 'rgba(234, 88, 12, 0.2)' : '#fff7ed')
                         : darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                      color: time === d.nextSupplyTime 
-                        ? (darkMode ? '#fdba74' : '#ea580c') 
+                      color: time === d.nextSupplyTime.split(' ')[0]
+                        ? (darkMode ? '#fdba74' : '#ea580c')
                         : colors.textColor,
-                      border: time === d.nextSupplyTime 
-                        ? (darkMode ? '1px solid #ea580c' : '1px solid #fb923c') 
+                      border: time === d.nextSupplyTime.split(' ')[0]
+                        ? (darkMode ? '1px solid #ea580c' : '1px solid #fb923c')
                         : 'none'
                     }}
                   >
                     <span className="font-medium">{time}</span>
-                    {time === d.nextSupplyTime && (
+                    {time === d.nextSupplyTime.split(' ')[0] && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-medium">NEXT</span>
-                        <div className="w-2 h-2 rounded-full animate-pulse" 
+                        <div className="w-2 h-2 rounded-full animate-pulse"
                              style={{ backgroundColor: darkMode ? '#fdba74' : '#ea580c' }}></div>
                       </div>
                     )}
@@ -453,19 +450,19 @@ const DashboardHome = () => {
               <h3 className="text-lg font-bold mb-4" style={{ color: colors.textColor }}>Quick Actions</h3>
               <div className="space-y-3">
                 <button className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        style={{ 
-                          backgroundColor: darkMode ? 'rgba(8, 145, 178, 0.2)' : '#e0f2fe', 
+                        style={{
+                          backgroundColor: darkMode ? 'rgba(8, 145, 178, 0.2)' : '#e0f2fe',
                           color: darkMode ? '#67e8f9' : '#0891b2',
                           border: darkMode ? '1px solid #0891b2' : '1px solid #06b6d4'
                         }}>
                   <FiFileText className="w-5 h-5" />
                   Payment History
                 </button>
-                <button 
+                <button
                   onClick={handleManageGuests}
                   className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                  style={{ 
-                    backgroundColor: darkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4', 
+                  style={{
+                    backgroundColor: darkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4',
                     color: darkMode ? '#6ee7b7' : '#059669',
                     border: darkMode ? '1px solid #059669' : '1px solid #10b981'
                   }}

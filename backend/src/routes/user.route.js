@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { userSignup, userLogin, verifyEmail, addFamilyMember, getCurrentDayGuests, viewInvitedGuests, viewMonthwiseDetails, getUser, getProfileDetails, getFamilyMembers, fetchDashboardDetails, updateUserProfile } from "../controllers/user.controller.js";
+import { userSignup, userLogin, generateEmailVerificationOtp, addFamilyMember, getCurrentDayGuests, viewInvitedGuests, viewMonthwiseDetails, getUser, getProfileDetails, getFamilyMembers, fetchDashboardDetails, updateUserProfile } from "../controllers/user.controller.js";
 
 const router = Router();
 
 router.post("/signup", userSignup);
 router.post("/login", userLogin);
-router.post("/:useremail/verify-email", verifyEmail);
+router.post("/:useremail/generate-email-verification-otp", generateEmailVerificationOtp);
 router.post("/:userid/:memberid/add-family-member", addFamilyMember);
 router.get("/:waterid/get-currentday-guests", getCurrentDayGuests);
 router.get("/:waterid/view-guests", viewInvitedGuests);

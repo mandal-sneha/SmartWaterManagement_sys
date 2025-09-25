@@ -11,7 +11,6 @@ const useTheme = () => {
   
   const { darkMode } = context;
   
-  // Enhanced colors specifically for UsageInsights with better dark mode contrast
   const colors = {
     baseColor: darkMode ? '#0f0f23' : '#f8f6ff',
     cardBg: darkMode ? '#1a1a2e' : '#ffffff',
@@ -69,7 +68,6 @@ const UsageInsights = () => {
   ]
 
   const generateFineAmount = () => {
-    // Generate random fine amounts between ₹50 to ₹500
     const amounts = [50, 75, 100, 150, 200, 250, 300, 350, 400, 500];
     return amounts[Math.floor(Math.random() * amounts.length)];
   }
@@ -130,7 +128,6 @@ const UsageInsights = () => {
     <div className="min-h-screen p-6" style={{ backgroundColor: colors.baseColor }}>
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
-          {/* Today's Usage Card */}
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
@@ -173,7 +170,6 @@ const UsageInsights = () => {
             </div>
           </div>
 
-          {/* Monthly Trend Card */}
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
@@ -222,7 +218,6 @@ const UsageInsights = () => {
             </div>
           </div>
 
-          {/* Yearly Overview Card */}
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
             border: `1px solid ${colors.borderColor}`,
@@ -269,7 +264,6 @@ const UsageInsights = () => {
           </div>
         </div>
 
-        {/* Monthly Breakdown Card */}
         <div className="rounded-xl p-5 mb-8" style={{ 
           backgroundColor: colors.cardBg,
           border: `1px solid ${colors.borderColor}`,
@@ -377,7 +371,6 @@ const UsageInsights = () => {
           </div>
         </div>
 
-        {/* Footer Card */}
         <div className="rounded-xl p-6 text-center" style={{ 
           backgroundColor: colors.cardBg,
           border: `1px solid ${colors.borderColor}`,
@@ -399,4 +392,4 @@ const UsageInsights = () => {
   )
 }
 
-export default UsageInsights
+export default UsageInsights;

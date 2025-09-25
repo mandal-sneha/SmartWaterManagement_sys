@@ -188,7 +188,7 @@ export const userLogin = async (req, res) => {
   }
 };
 
-export const verifyEmail = async (req, res) => {
+export const generateEmailVerificationOtp = async (req, res) => {
   try {
     const { useremail } = req.params;
 
@@ -205,7 +205,7 @@ export const verifyEmail = async (req, res) => {
       { new: true, upsert: true }
     );
 
-    const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransporter({
       host: process.env.SMTP_HOST,
       port: process.env.SMTP_PORT,
       secure: process.env.SMTP_PORT == 465,
@@ -224,55 +224,69 @@ export const verifyEmail = async (req, res) => {
 <head>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); font-family: 'Inter', Arial, sans-serif;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 40px 20px;">
-        <div style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border-radius: 20px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1); overflow: hidden;">
-            <!-- Header with gradient -->
-            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 30px; text-align: center;">
-                <h1 style="color: white; font-size: 28px; margin: 0; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">HydraOne</h1>
-                <div style="width: 60px; height: 3px; background: rgba(255,255,255,0.3); margin: 15px auto; border-radius: 2px;"></div>
-            </div>
+<body style="margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter', Arial, sans-serif; min-height: 100vh;">
+    <div style="max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 100%; background: #1a1a1a; position: relative; overflow: hidden; border-radius: 20px;">
+            <!-- Purple side borders -->
+            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(180deg, #8B5CF6, #A855F7, #C084FC); border-radius: 20px 0 0 20px;"></div>
+            <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(180deg, #8B5CF6, #A855F7, #C084FC); border-radius: 0 20px 20px 0;"></div>
             
-            <!-- Content -->
-            <div style="padding: 40px 30px;">
+            <div style="margin: 0 60px; padding: 40px 30px; position: relative;">
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <div style="background: linear-gradient(135deg, #8B5CF6, #A855F7); padding: 15px 40px; border-radius: 50px; display: inline-block; margin-bottom: 30px;">
+                        <h1 style="color: white; font-size: 24px; margin: 0; font-weight: 700; letter-spacing: 1px;">HydraOne</h1>
+                    </div>
+                </div>
+                
                 <div style="text-align: center; margin-bottom: 30px;">
-                    <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);">
-                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M9 12L11 14L15 10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                    </div>
-                    <h2 style="color: #2d3748; font-size: 24px; margin: 0 0 10px 0; font-weight: 600;">Verify Your Account</h2>
-                    <p style="color: #718096; font-size: 16px; margin: 0;">Enter this code to complete your verification</p>
+                    <div style="font-size: 60px; margin-bottom: 20px;">🚀</div>
                 </div>
                 
-                <!-- OTP Display -->
-                <div style="text-align: center; margin: 40px 0;">
-                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border: 2px dashed #667eea; border-radius: 12px; padding: 30px; display: inline-block; position: relative;">
-                        <div style="position: absolute; top: -1px; left: -1px; right: -1px; bottom: -1px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 12px; z-index: -1; opacity: 0.1;"></div>
-                        <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">${otp}</span>
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <h2 style="color: #8B5CF6; font-size: 48px; margin: 0 0 15px 0; font-weight: 700; letter-spacing: -1px;">Almost There!</h2>
+                    <p style="color: #9CA3AF; font-size: 18px; margin: 0; font-weight: 400;">Just one more step to secure</p>
+                    <p style="color: #9CA3AF; font-size: 18px; margin: 5px 0 0 0; font-weight: 400;">your account ✨</p>
+                </div>
+                
+                <div style="text-align: center; margin: 60px 0;">
+                    <p style="color: #9CA3AF; font-size: 14px; margin: 0 0 20px 0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;">Your Verification Code</p>
+                    
+                    <!-- OTP Display with gradient border -->
+                    <div style="position: relative; display: inline-block; margin: 20px 0;">
+                        <div style="background: linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6); padding: 3px; border-radius: 20px;">
+                            <div style="background: #1a1a1a; border-radius: 17px; padding: 30px 40px;">
+                                <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #8B5CF6; font-family: 'Courier New', monospace;">${otp.toString().split('').join(' ')}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 
-                <div style="background: linear-gradient(135deg, #fef5e7 0%, #fed7aa 100%); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 20px; margin: 30px 0;">
-                    <p style="color: #92400e; font-size: 14px; margin: 0; font-weight: 500;">
-                        ⏰ This code expires in 10 minutes for your security
+                <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1)); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 15px; padding: 25px; margin: 40px 0; position: relative;">
+                    <div style="margin-bottom: 15px;">
+                        <span style="font-size: 24px; margin-right: 10px;">⏰</span>
+                        <span style="color: #10B981; font-size: 18px; font-weight: 600;">Quick Reminder</span>
+                    </div>
+                    <p style="color: #D1D5DB; font-size: 16px; margin: 0 0 10px 0; line-height: 1.5;">This code is like a digital key</p>
+                    <p style="color: #D1D5DB; font-size: 16px; margin: 0 0 10px 0; line-height: 1.5;">that expires in 10 minutes.</p>
+                    <p style="color: #D1D5DB; font-size: 16px; margin: 0; line-height: 1.5;">Use it quickly to unlock your</p>
+                    <p style="color: #D1D5DB; font-size: 16px; margin: 0; line-height: 1.5;">account! 🔑</p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid #374151;">
+                    <p style="color: #6B7280; font-size: 12px; margin: 0;">
+                        © ${new Date().getFullYear()} HydraOne. All rights reserved.
+                    </p>
+                    <p style="color: #6B7280; font-size: 12px; margin: 10px 0 0 0;">
+                        Didn't request this? You can safely ignore this email.
                     </p>
                 </div>
-                
-                <p style="color: #718096; font-size: 14px; text-align: center; margin: 30px 0 0 0; line-height: 1.6;">
-                    Didn't request this? You can safely ignore this email or 
-                    <a href="#" style="color: #667eea; text-decoration: none; font-weight: 500;">contact support</a>
-                </p>
-            </div>
-            
-            <!-- Footer -->
-            <div style="background: #f8fafc; padding: 20px 30px; border-top: 1px solid #e2e8f0; text-align: center;">
-                <p style="color: #a0aec0; font-size: 12px; margin: 0;">
-                    © ${new Date().getFullYear()} HydraOne. All rights reserved.
-                </p>
             </div>
         </div>
     </div>
@@ -701,197 +715,82 @@ export const getFamilyMembers = async (req, res) => {
 export const fetchDashboardDetails = async (req, res) => {
   try {
     const { userid } = req.params;
-
-    if (!userid) {
-      return res.status(400).json({
-        success: false,
-        message: "User ID is required",
-      });
-    }
-
-    const user = await User.findOne({ userId: userid });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    if (!user.waterId) {
-      return res.status(200).json({
-        success: true,
-        hasWaterId: false,
-      });
-    }
-
-    const waterIdParts = user.waterId.split("_");
-    if (waterIdParts.length < 2) {
-      return res.status(200).json({
-        success: true,
-        hasWaterId: false,
-      });
-    }
-
-    const [rootId, tenantCode] = waterIdParts;
-
-    if (!rootId || !tenantCode) {
-      return res.status(200).json({
-        success: true,
-        hasWaterId: false,
-      });
-    }
-
-    const family = await Family.findOne({ rootId, tenantCode });
+    const family = await Family.findOne({ members: userid });
 
     if (!family) {
-      return res.status(200).json({
-        success: true,
-        hasWaterId: true,
-        waterUsedThisMonth: 0,
-        waterUsedThisWeek: 0,
-        guestsThisMonth: 0,
-        billThisMonth: 0,
-        lastMonthBill: 0,
-        billStatus: "paid",
-        dueDate: new Date().toISOString().split("T")[0],
-        nextSupplyTime: "8 AM",
-        hoursUntilNext: 0,
-      });
+      const user = await User.findOne({ userId: userid });
+      if (!user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+      return res.status(200).json({ success: true, hasWaterId: false });
     }
 
-    const now = moment().tz("Asia/Kolkata");
-    const currentMonth = now.format("YYYY-MM");
-    const currentWeekStart = now.clone().startOf("week");
-    const lastMonth = now.clone().subtract(1, "month").format("YYYY-MM");
+    let latestDateStr = null;
+    if (family.waterUsage && family.waterUsage.size > 0) {
+      latestDateStr = Array.from(family.waterUsage.keys()).sort().pop();
+    }
+
+    const now = latestDateStr ? moment(latestDateStr).tz("Asia/Kolkata") : moment().tz("Asia/Kolkata");
+    
+    const startOfMonth = now.clone().startOf('month');
+    const startOfWeek = now.clone().startOf('week');
+    const startOfLastMonth = now.clone().subtract(1, 'month').startOf('month');
+    const endOfLastMonth = startOfLastMonth.clone().endOf('month');
 
     let waterUsedThisMonth = 0;
     let waterUsedThisWeek = 0;
     let lastMonthWaterUsage = 0;
-
-    if (family.waterUsage) {
-      try {
-        const usageData = convertMapToObject(family.waterUsage);
-
-        for (const [dateStr, usage] of Object.entries(usageData)) {
-          if (!dateStr || (!usage && usage !== 0)) continue;
-
-          const usageValue = Number(usage);
-          if (isNaN(usageValue)) continue;
-
-          const date = parseDate(dateStr);
-          if (!date) continue;
-
-          if (date.format("YYYY-MM") === currentMonth) {
-            waterUsedThisMonth += usageValue;
-          }
-          if (date.isSameOrAfter(currentWeekStart, "day")) {
-            waterUsedThisWeek += usageValue;
-          }
-          if (date.format("YYYY-MM") === lastMonth) {
-            lastMonthWaterUsage += usageValue;
-          }
-        }
-      } catch (error) {
-        console.error("Error processing waterUsage:", error);
-      }
-    }
-
     let guestsThisMonth = 0;
-    if (family.numberOfGuests) {
-      try {
-        const guestData = convertMapToObject(family.numberOfGuests);
 
-        for (const [dateStr, guestCount] of Object.entries(guestData)) {
-          if (!dateStr || (!guestCount && guestCount !== 0)) continue;
-
-          const guestValue = Number(guestCount);
-          if (isNaN(guestValue)) continue;
-
-          const date = parseDate(dateStr);
-          if (!date) continue;
-
-          if (date.format("YYYY-MM") === currentMonth) {
-            guestsThisMonth += guestValue;
-          }
-        }
-      } catch (error) {
-        console.error("Error processing numberOfGuests:", error);
-      }
-    }
-
-    const billThisMonth = Math.max(0, Math.round(waterUsedThisMonth * 10));
-    const lastMonthBill = Math.max(0, Math.round(lastMonthWaterUsage * 10));
-
-    let dueDate;
-    try {
-      dueDate = `${now.format("YYYY")}-${now.format("MM")}-05`;
-    } catch (error) {
-      dueDate = new Date().toISOString().split("T")[0];
-    }
-
-    const supplyTimes = [
-      { time: "08:00", display: "8 AM" },
-      { time: "12:00", display: "12 PM" },
-      { time: "15:00", display: "3 PM" },
-    ];
-
-    const currentHour = now.hour();
-    const currentMinute = now.minute();
-    const currentTimeInMinutes = currentHour * 60 + currentMinute;
-
-    let nextSupplyTime = "8 AM";
-    let hoursUntilNext = 0;
-
-    try {
-      let foundNext = false;
-
-      for (let supply of supplyTimes) {
-        const [hour, minute] = supply.time.split(":").map(Number);
-        const supplyTimeInMinutes = hour * 60 + minute;
-
-        if (currentTimeInMinutes < supplyTimeInMinutes) {
-          nextSupplyTime = supply.display;
-          const minutesUntilNext = supplyTimeInMinutes - currentTimeInMinutes;
-          hoursUntilNext = Math.max(1, Math.ceil(minutesUntilNext / 60));
-          foundNext = true;
-          break;
+    if (family.waterUsage && family.waterUsage.size > 0) {
+      for (const [dateStr, usageValue] of family.waterUsage) {
+        const date = moment(dateStr, "YYYY-MM-DD", true);
+        if (date.isValid()) {
+          const usage = Number(usageValue) || 0;
+          if (date.isSameOrAfter(startOfMonth)) waterUsedThisMonth += usage;
+          if (date.isSameOrAfter(startOfWeek)) waterUsedThisWeek += usage;
+          if (date.isBetween(startOfLastMonth, endOfLastMonth, null, '[]')) lastMonthWaterUsage += usage;
         }
       }
-
-      if (!foundNext) {
-        nextSupplyTime = "8 AM (Tomorrow)";
-        const tomorrow8AM = now
-          .clone()
-          .add(1, "day")
-          .startOf("day")
-          .add(8, "hours");
-        hoursUntilNext = Math.ceil(tomorrow8AM.diff(now, "minutes") / 60);
+    }
+    
+    if (family.guests && family.guests.size > 0) {
+      for (const [dateStr, guests] of family.guests) {
+        const date = moment(dateStr, "YYYY-MM-DD", true);
+        if (date.isValid() && date.isSameOrAfter(startOfMonth) && Array.isArray(guests)) {
+          guestsThisMonth += guests.length;
+        }
       }
-    } catch (error) {
-      console.error("Error calculating next supply time:", error);
-      nextSupplyTime = "8 AM";
-      hoursUntilNext = 0;
     }
 
-    const responseData = {
+    const realNow = moment().tz("Asia/Kolkata");
+    const supplyTimes = [{ h: 8, t: "8 AM" }, { h: 12, t: "12 PM" }, { h: 15, t: "3 PM" }];
+    let nextSupply = { t: "8 AM (Tomorrow)", m: realNow.clone().add(1, 'day').startOf('day').hour(8) };
+
+    for (const supply of supplyTimes) {
+      const supplyMoment = realNow.clone().hour(supply.h).startOf('hour');
+      if (realNow.isBefore(supplyMoment)) {
+        nextSupply = { t: supply.t, m: supplyMoment };
+        break;
+      }
+    }
+    
+    return res.status(200).json({
       success: true,
       hasWaterId: true,
-      waterUsedThisMonth: Math.round(waterUsedThisMonth * 100) / 100,
-      waterUsedThisWeek: Math.round(waterUsedThisWeek * 100) / 100,
-      guestsThisMonth: guestsThisMonth,
-      billThisMonth: billThisMonth,
-      lastMonthBill: lastMonthBill,
+      waterUsedThisMonth: Math.round(waterUsedThisMonth),
+      waterUsedThisWeek: Math.round(waterUsedThisWeek),
+      guestsThisMonth,
+      billThisMonth: Math.round(waterUsedThisMonth * 10),
+      lastMonthBill: Math.round(lastMonthWaterUsage * 10),
       billStatus: "paid",
-      dueDate: dueDate,
-      nextSupplyTime: nextSupplyTime,
-      hoursUntilNext: hoursUntilNext,
-    };
+      dueDate: now.clone().date(5).format("YYYY-MM-DD"),
+      nextSupplyTime: nextSupply.t,
+      hoursUntilNext: Math.max(0, Math.ceil(nextSupply.m.diff(realNow, 'minutes') / 60)),
+    });
 
-    res.status(200).json(responseData);
   } catch (error) {
-    console.error("Error fetching dashboard details:", error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: "Internal server error while fetching dashboard data",
       error: error.message,

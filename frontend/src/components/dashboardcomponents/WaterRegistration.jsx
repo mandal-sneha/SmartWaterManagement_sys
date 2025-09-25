@@ -6,10 +6,8 @@ import { ThemeContext } from '../UserDashboard';
 const useTheme = () => {
   const { darkMode, colors: themeColors } = useContext(ThemeContext);
   
-  // Enhanced colors for better dark mode contrast
   const enhancedColors = {
     ...themeColors,
-    // Light mode colors
     ...((!darkMode) && {
       baseColor: '#f8fafc',
       cardBg: 'rgba(255, 255, 255, 0.8)',
@@ -29,7 +27,6 @@ const useTheme = () => {
       gradientTo: '#8b5cf6',
       hoverShadow: 'rgba(59, 130, 246, 0.15)',
     }),
-    // Dark mode colors with high contrast
     ...(darkMode && {
       baseColor: '#0f172a',
       cardBg: 'rgba(30, 41, 59, 0.8)',
@@ -363,7 +360,6 @@ const WaterRegistration = () => {
     >
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Family Members Section */}
           <div 
             className="rounded-2xl p-6 border shadow-xl backdrop-blur-sm transition-all duration-300 hover:shadow-2xl" 
             style={{ 
@@ -780,96 +776,6 @@ const WaterRegistration = () => {
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes gradient-shift {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-        
-        .text-shadow {
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Enhanced scrollbar styling for dark mode */
-        .space-y-4::-webkit-scrollbar {
-          width: 8px;
-        }
-        
-        .space-y-4::-webkit-scrollbar-track {
-          background: ${darkMode ? 'rgba(51, 65, 85, 0.3)' : 'rgba(241, 245, 249, 0.8)'};
-          border-radius: 10px;
-        }
-        
-        .space-y-4::-webkit-scrollbar-thumb {
-          background: ${darkMode ? 'rgba(148, 163, 184, 0.6)' : 'rgba(100, 116, 139, 0.6)'};
-          border-radius: 10px;
-          transition: background 0.3s ease;
-        }
-        
-        .space-y-4::-webkit-scrollbar-thumb:hover {
-          background: ${darkMode ? 'rgba(148, 163, 184, 0.8)' : 'rgba(100, 116, 139, 0.8)'};
-        }
-
-        /* Smooth transitions for all interactive elements */
-        * {
-          transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        /* Enhanced focus states for accessibility */
-        input:focus, button:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px ${darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)'};
-        }
-
-        /* Improved checkbox styling for dark mode */
-        input[type="checkbox"] {
-          appearance: none;
-          width: 1.25rem;
-          height: 1.25rem;
-          border: 2px solid ${colors.borderColor};
-          border-radius: 0.375rem;
-          background-color: ${colors.inputBg};
-          position: relative;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-
-        input[type="checkbox"]:checked {
-          background-color: ${colors.primaryBg};
-          border-color: ${colors.primaryBg};
-        }
-
-        input[type="checkbox"]:checked::after {
-          content: '✓';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          color: white;
-          font-size: 0.875rem;
-          font-weight: bold;
-        }
-
-        input[type="checkbox"]:hover {
-          border-color: ${colors.primaryBg};
-          box-shadow: 0 0 0 2px ${darkMode ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'};
-        }
-
-        /* Time input styling enhancement */
-        input[type="time"] {
-          color-scheme: ${darkMode ? 'dark' : 'light'};
-        }
-
-        input[type="time"]::-webkit-calendar-picker-indicator {
-          filter: ${darkMode ? 'invert(1)' : 'none'};
-          cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 };

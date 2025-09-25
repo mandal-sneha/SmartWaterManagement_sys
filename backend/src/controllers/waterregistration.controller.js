@@ -12,8 +12,7 @@ export const getRegistrationDetails = async (req, res) => {
         const { waterid } = req.params;
 
         const currentIST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
-        currentIST.setDate(currentIST.getDate() - 1);
-        const currentHour = 7;
+        const currentHour = currentIST.getHours();
 
         let slot;
         if (currentHour < 8) {
@@ -23,22 +22,28 @@ export const getRegistrationDetails = async (req, res) => {
         } else if (currentHour < 15) {
             slot = 15;
         } else {
-            return res.status(400).json({
-                success: false,
-                message: "No slots available for today"
+            return res.status(200).json({
+                success: true,
+                data: {
+                    primaryMembers: [],
+                    invitedGuests: []
+                }
             });
         }
 
         const registration = await WaterRegistration.findOne({ waterId: waterid, slot });
 
         if (!registration) {
-            return res.status(404).json({
-                success: false,
-                message: "No registration found"
+            return res.status(200).json({
+                success: true,
+                data: {
+                    primaryMembers: [],
+                    invitedGuests: []
+                }
             });
         }
 
-        const { primaryMembers, specialMembers, invitedGuests } = registration;
+        const { primaryMembers = [], specialMembers = [], invitedGuests = [] } = registration;
 
         const fetchUsers = async (userIds = []) => {
             const users = await User.find(
@@ -88,6 +93,8 @@ export const registerForWater = async (req, res) => {
         const currentHour = currentIST.getHours();
 
         let slot;
+        let date = new Date(currentIST);
+
         if (currentHour < 8) {
             slot = 8;
         } else if (currentHour < 12) {
@@ -95,13 +102,11 @@ export const registerForWater = async (req, res) => {
         } else if (currentHour < 15) {
             slot = 15;
         } else {
-            return res.status(400).json({
-                success: false,
-                message: "No slots available for today"
-            });
+            slot = 8;
+            date.setDate(date.getDate() + 1);
         }
 
-        const existing = await WaterRegistration.findOne({ waterId: waterid, slot });
+        const existing = await WaterRegistration.findOne({ waterId: waterid, slot, createdAt: { $gte: new Date(date.setHours(0,0,0,0)), $lt: new Date(date.setHours(23,59,59,999)) } });
         if (existing) {
             return res.status(400).json({
                 success: false,
@@ -115,7 +120,8 @@ export const registerForWater = async (req, res) => {
             specialMembers,
             invitedGuests: [],
             slot,
-            extraWaterRequested: !!extraWaterRequested
+            extraWaterRequested: !!extraWaterRequested,
+            createdAt: date
         });
 
         await registration.save();
