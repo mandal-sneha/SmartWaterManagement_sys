@@ -859,3 +859,85 @@ export const updateUserProfile = async (req, res) => {
     });
   }
 };
+
+export const getInsights = async (req, res) => {
+  try {
+    const { waterid } = req.params;
+    const [rootId, tenantCode] = waterid.split("_");
+
+    const family = await Family.findOne({ rootId, tenantCode });
+
+    if (!family) {
+      return res.status(404).json({
+        success: false,
+        message: "Family data not found for the given water ID.",
+      });
+    }
+
+    const today = moment().tz("Asia/Kolkata");
+    const todayStr = today.format("YYYY-MM-DD");
+
+    const totalUsageToday = family.waterUsage?.get(todayStr) || 0;
+    const extraWaterToday = family.extraWaterDates?.get(todayStr) || 0;
+    const guestIdsToday = family.guests?.get(todayStr) || [];
+    const numGuests = guestIdsToday.length;
+    
+    const primaryMembers = await User.find({ waterId: waterid });
+    const numPrimaryMembers = primaryMembers.length;
+
+    const baseUsageToday = totalUsageToday - extraWaterToday;
+    const totalPeople = numPrimaryMembers + numGuests;
+    const perPersonUsage = totalPeople > 0 ? baseUsageToday / totalPeople : 0;
+    
+    const dailyData = [
+      { name: "Primary Members", value: Math.round(perPersonUsage * numPrimaryMembers) },
+      { name: "Water by Guests", value: Math.round(perPersonUsage * numGuests) },
+      { name: "Extra Water", value: Math.round(extraWaterToday) },
+    ];
+
+    const thirtyDayTrend = [];
+    for (let i = 29; i >= 0; i--) {
+      const date = moment().tz("Asia/Kolkata").subtract(i, 'days');
+      const dateStr = date.format("YYYY-MM-DD");
+      thirtyDayTrend.push({
+        day: date.format("D MMM"),
+        usage: family.waterUsage?.get(dateStr) || 0,
+      });
+    }
+
+    const yearlyUsage = Array(12).fill(0);
+    const currentYear = today.year();
+    if (family.waterUsage) {
+        for (const [dateStr, usage] of family.waterUsage.entries()) {
+            const entryDate = moment(dateStr, "YYYY-MM-DD");
+            if (entryDate.year() === currentYear) {
+                const monthIndex = entryDate.month();
+                yearlyUsage[monthIndex] += usage;
+            }
+        }
+    }
+    
+    const monthNames = moment.monthsShort();
+    const yearlyData = monthNames.map((month, index) => ({
+      month,
+      usage: Math.round(yearlyUsage[index]),
+    }));
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        dailyUsage: dailyData,
+        thirtyDayTrend: thirtyDayTrend,
+        yearlyOverview: yearlyData,
+      },
+    });
+
+  } catch (error) {
+    console.error("Error in getInsights:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while fetching insights data.",
+      error: error.message,
+    });
+  }
+};

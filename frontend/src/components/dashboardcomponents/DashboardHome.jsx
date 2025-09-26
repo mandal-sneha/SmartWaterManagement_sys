@@ -15,7 +15,6 @@ import {
 import { useTheme } from '../UserDashboard';
 import desertCactus from '../../assets/desert-cactus.svg';
 
-
 const DashboardHome = () => {
   const { darkMode, colors } = useTheme();
   const [dashboardData, setDashboardData] = useState(null);
@@ -28,22 +27,27 @@ const DashboardHome = () => {
     (async () => {
       try {
         const userObject = localStorage.getItem('user');
-        const userId = userObject ? JSON.parse(userObject).userId : localStorage.getItem('userId');
+        const userId = userObject ? JSON.parse(userObject).userId : null;
         const waterId = userObject ? JSON.parse(userObject).waterId : null;
 
-        if (!userId) throw new Error('User ID not found');
-        if (!waterId) throw new Error('Water ID not found');
+        if (!userId) {
+          setLoading(false);
+          return;
+        }
+
+        if (!waterId) {
+            const { data } = await axiosInstance.get(`/user/${userId}/dashboard`);
+            setDashboardData(data);
+            setLoading(false);
+            return;
+        }
 
         const { data } = await axiosInstance.get(`/user/${userId}/dashboard`);
         setDashboardData(data);
 
         try {
           const guestResponse = await axiosInstance.get(`/user/${waterId}/get-currentday-guests`);
-          if (Array.isArray(guestResponse.data)) {
-            setGuestData(guestResponse.data);
-          } else {
-            setGuestData([]);
-          }
+          setGuestData(Array.isArray(guestResponse.data) ? guestResponse.data : []);
         } catch (guestError) {
           setGuestData([]);
         }
@@ -75,21 +79,13 @@ const DashboardHome = () => {
     return `${hour12}:${minutes} ${period}`;
   };
 
-  const handleManageGuests = () => {
-    console.log('Manage Guests clicked');
-  };
-
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: darkMode ? '#1a1a1a' : '#f8fafc' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
       <div className="text-center">
         <div className="relative">
           <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4"
-               style={{
-                 borderColor: darkMode ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.2)',
-                 borderTopColor: colors.primaryBg
-               }}></div>
-          <div className="absolute inset-0 w-16 h-16 border-4 border-transparent rounded-full animate-pulse mx-auto"
-               style={{ borderBottomColor: colors.accent }}></div>
+               style={{ borderColor: 'rgba(110, 142, 251, 0.2)', borderTopColor: colors.primaryBg }}>
+          </div>
         </div>
         <p className="text-lg font-medium" style={{ color: colors.textColor }}>Loading your dashboard...</p>
       </div>
@@ -97,12 +93,10 @@ const DashboardHome = () => {
   );
 
   if (error) return (
-    <div className="min-h-screen flex items-center justify-center"
-         style={{ backgroundColor: darkMode ? '#1a1a1a' : '#fef2f2' }}>
-      <div className="text-center rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
-        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4"
-             style={{ backgroundColor: darkMode ? 'rgba(239, 68, 68, 0.2)' : '#fee2e2' }}>
-          <FiAlertCircle className="w-8 h-8 text-red-500" />
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
+      <div className="text-center rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.cardBg }}>
+        <div className="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)' }}>
+          <FiAlertCircle className="w-8 h-8" style={{color: colors.danger || '#ef4444'}} />
         </div>
         <p className="text-lg font-medium" style={{ color: colors.textColor }}>{error}</p>
       </div>
@@ -111,11 +105,9 @@ const DashboardHome = () => {
 
   if (!dashboardData || dashboardData.hasWaterId === false) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center"
-           style={{ backgroundColor: darkMode ? '#0f172a' : '#f1f5f9' }}>
-        <div className="rounded-3xl p-12 shadow-xl max-w-md" style={{ backgroundColor: colors.baseColor }}>
-          <div className="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-8"
-               style={{ backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.2)' : '#dbeafe' }}>
+      <div className="min-h-screen flex flex-col items-center justify-center px-4 text-center" style={{ backgroundColor: colors.baseColor }}>
+        <div className="rounded-3xl p-12 shadow-xl max-w-md" style={{ backgroundColor: colors.cardBg }}>
+          <div className="w-32 h-32 rounded-full flex items-center justify-center mx-auto mb-8" style={{ backgroundColor: 'rgba(110, 142, 251, 0.1)' }}>
             <img src={desertCactus} alt="Empty Dashboard" className="w-20 h-20 opacity-90" />
           </div>
           <h3 className="text-3xl font-bold mb-4" style={{ color: colors.textColor }}>
@@ -134,15 +126,10 @@ const DashboardHome = () => {
   }
 
   const d = dashboardData;
-  console.log(d);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: darkMode ? '#0f172a' : '#f8fafc' }}>
-      <div className="shadow-sm border-b"
-           style={{
-             backgroundColor: colors.baseColor,
-             borderColor: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
-           }}>
+    <div className="min-h-screen" style={{ backgroundColor: colors.baseColor }}>
+      <div className="shadow-sm border-b" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
         <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="text-center">
             <div className="flex items-center justify-center gap-2" style={{ color: colors.mutedText }}>
@@ -157,11 +144,9 @@ const DashboardHome = () => {
 
       <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
-               style={{ backgroundColor: colors.baseColor }}>
+          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: darkMode ? 'rgba(59, 130, 246, 0.2)' : '#dbeafe' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(110, 142, 251, 0.1)' }}>
                 <FiDroplet className="w-6 h-6" style={{ color: colors.primaryBg }} />
               </div>
               <span className="text-2xl font-bold" style={{ color: colors.textColor }}>{d.waterUsedThisMonth}L</span>
@@ -170,12 +155,10 @@ const DashboardHome = () => {
             <p className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>This month</p>
           </div>
 
-          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
-               style={{ backgroundColor: colors.baseColor }}>
+          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.2)' : '#dcfce7' }}>
-                <FiUsers className="w-6 h-6" style={{ color: colors.accent || '#22c55e' }} />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+                <FiUsers className="w-6 h-6" style={{ color: colors.accent || '#10b981' }} />
               </div>
               <span className="text-2xl font-bold" style={{ color: colors.textColor }}>{d.guestsThisMonth}</span>
             </div>
@@ -183,30 +166,24 @@ const DashboardHome = () => {
             <p className="text-xs mt-1" style={{ color: colors.mutedText, opacity: 0.7 }}>This month</p>
           </div>
 
-          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
-               style={{ backgroundColor: colors.baseColor }}>
+          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: darkMode ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff' }}>
-                <FiCreditCard className="w-6 h-6 text-purple-600" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167, 119, 227, 0.1)' }}>
+                <FiCreditCard className="w-6 h-6" style={{ color: colors.secondaryBg }}/>
               </div>
               <span className="text-2xl font-bold" style={{ color: colors.textColor }}>₹{d.billThisMonth}</span>
             </div>
             <p className="text-sm font-medium" style={{ color: colors.mutedText }}>Current Bill</p>
             <div className="flex items-center gap-1 mt-1">
-              <FiCheck className="w-3 h-3" style={{ color: colors.accent || '#22c55e' }} />
-              <p className="text-xs font-medium" style={{ color: colors.accent || '#22c55e' }}>
-                {d.billStatus.toUpperCase()}
-              </p>
+              <FiCheck className="w-3 h-3" style={{ color: colors.accent || '#10b981' }} />
+              <p className="text-xs font-medium" style={{ color: colors.accent || '#10b981' }}>{d.billStatus.toUpperCase()}</p>
             </div>
           </div>
 
-          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300"
-               style={{ backgroundColor: colors.baseColor }}>
+          <div className="rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
             <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center"
-                   style={{ backgroundColor: darkMode ? 'rgba(249, 115, 22, 0.2)' : '#fed7aa' }}>
-                <FiTruck className="w-6 h-6 text-orange-600" />
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)' }}>
+                <FiTruck className="w-6 h-6" style={{ color: '#f97316' }}/>
               </div>
               <span className="text-lg font-bold" style={{ color: colors.textColor }}>{d.nextSupplyTime}</span>
             </div>
@@ -218,89 +195,53 @@ const DashboardHome = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
+          <div className="lg:col-span-2 rounded-2xl p-8 shadow-lg" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-4" style={{ color: colors.textColor }}>Today's Guest Details</h3>
               {guestData.length > 0 ? (
                 <div className="space-y-4">
                   {guestData.filter(guest => guest.status.toLowerCase() === 'accepted').length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium mb-3" style={{ color: colors.accent || '#22c55e' }}>
-                        Accepted Guests
-                      </h4>
+                      <h4 className="text-sm font-medium mb-3" style={{ color: colors.accent || '#10b981' }}>Accepted Guests</h4>
                       <div className="space-y-3">
-                        {guestData
-                          .filter(guest => guest.status.toLowerCase() === 'accepted')
-                          .map((guest, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                                 style={{
-                                   backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4',
-                                   borderColor: colors.accent || '#22c55e'
-                                 }}>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full overflow-hidden">
-                                  <img
-                                    src={guest.userProfilePhoto}
-                                    alt={guest.userName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div>
-                                  <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
-                                  <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-bold text-sm" style={{ color: colors.textColor }}>
-                                  {formatTime(guest.arrivalTime)}
-                                </div>
-                                <div className="text-xs" style={{ color: colors.mutedText }}>
-                                  {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
-                                </div>
+                        {guestData.filter(guest => guest.status.toLowerCase() === 'accepted').map((guest, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: `1px solid ${colors.accent || '#10b981'}` }}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full overflow-hidden"><img src={guest.userProfilePhoto} alt={guest.userName} className="w-full h-full object-cover"/></div>
+                              <div>
+                                <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
+                                <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
                               </div>
                             </div>
-                          ))}
+                            <div className="text-right">
+                              <div className="font-bold text-sm" style={{ color: colors.textColor }}>{formatTime(guest.arrivalTime)}</div>
+                              <div className="text-xs" style={{ color: colors.mutedText }}>{guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
                   {guestData.filter(guest => guest.status.toLowerCase() === 'pending').length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium mb-3" style={{ color: '#f59e0b' }}>
-                        Pending Guests
-                      </h4>
+                      <h4 className="text-sm font-medium mb-3" style={{ color: '#f59e0b' }}>Pending Guests</h4>
                       <div className="space-y-3">
-                        {guestData
-                          .filter(guest => guest.status.toLowerCase() === 'pending')
-                          .map((guest, index) => (
-                            <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                                 style={{
-                                   backgroundColor: darkMode ? 'rgba(245, 158, 11, 0.1)' : '#fffbeb',
-                                   borderColor: '#f59e0b'
-                                 }}>
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full overflow-hidden">
-                                  <img
-                                    src={guest.userProfilePhoto}
-                                    alt={guest.userName}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div>
-                                  <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
-                                  <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <div className="font-bold text-sm" style={{ color: colors.textColor }}>
-                                  {formatTime(guest.arrivalTime)}
-                                </div>
-                                <div className="text-xs" style={{ color: colors.mutedText }}>
-                                  {guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay
-                                </div>
+                        {guestData.filter(guest => guest.status.toLowerCase() === 'pending').map((guest, index) => (
+                          <div key={index} className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'rgba(245, 158, 11, 0.1)', border: '1px solid #f59e0b' }}>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full overflow-hidden"><img src={guest.userProfilePhoto} alt={guest.userName} className="w-full h-full object-cover"/></div>
+                              <div>
+                                <div className="font-medium" style={{ color: colors.textColor }}>{guest.userName}</div>
+                                <div className="text-xs" style={{ color: colors.mutedText }}>{guest.userId}</div>
                               </div>
                             </div>
-                          ))}
+                            <div className="text-right">
+                              <div className="font-bold text-sm" style={{ color: colors.textColor }}>{formatTime(guest.arrivalTime)}</div>
+                              <div className="text-xs" style={{ color: colors.mutedText }}>{guest.stayDuration} hour{guest.stayDuration > 1 ? 's' : ''} stay</div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -318,37 +259,16 @@ const DashboardHome = () => {
               {familyMembers.length > 0 ? (
                 <div className="space-y-3">
                   {familyMembers.map((member, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 rounded-lg border"
-                         style={{
-                           backgroundColor: member.isSpecial
-                             ? (darkMode ? 'rgba(59, 130, 246, 0.1)' : '#f0f9ff')
-                             : (darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)'),
-                           borderColor: member.isSpecial
-                             ? colors.primaryBg
-                             : (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)')
-                         }}>
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: member.isSpecial ? 'rgba(110, 142, 251, 0.1)' : colors.hoverBg, borderColor: member.isSpecial ? colors.primaryBg : colors.borderColor }}>
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full overflow-hidden">
-                          <img
-                            src={member.userProfilePhoto}
-                            alt={member.userName}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
+                        <div className="w-10 h-10 rounded-full overflow-hidden"><img src={member.userProfilePhoto} alt={member.userName} className="w-full h-full object-cover"/></div>
                         <div>
                           <div className="flex items-center gap-2">
                             <div className="font-medium" style={{ color: colors.textColor }}>{member.userName}</div>
                             {member.isSpecial && (
                               <div className="flex items-center">
-                                <input
-                                  type="checkbox"
-                                  checked={member.isSpecial}
-                                  readOnly
-                                  className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                />
-                                <label className="ml-1 text-xs font-medium" style={{ color: colors.primaryBg }}>
-                                  Special
-                                </label>
+                                <input type="checkbox" checked={member.isSpecial} readOnly className="w-4 h-4 rounded" style={{accentColor: colors.primaryBg}}/>
+                                <label className="ml-1 text-xs font-medium" style={{ color: colors.primaryBg }}>Special</label>
                               </div>
                             )}
                           </div>
@@ -368,11 +288,10 @@ const DashboardHome = () => {
           </div>
 
           <div className="space-y-6">
-            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
+            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                     style={{ backgroundColor: darkMode ? 'rgba(168, 85, 247, 0.2)' : '#f3e8ff' }}>
-                  <FiFileText className="w-5 h-5 text-purple-600" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(167, 119, 227, 0.1)' }}>
+                  <FiFileText className="w-5 h-5" style={{ color: colors.secondaryBg }}/>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold" style={{ color: colors.textColor }}>Billing</h3>
@@ -381,34 +300,28 @@ const DashboardHome = () => {
               </div>
 
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg"
-                     style={{ backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                <div className="flex justify-between items-center p-3 rounded-lg" style={{ backgroundColor: colors.hoverBg }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Current Bill</span>
                   <span className="font-bold" style={{ color: colors.textColor }}>₹{d.billThisMonth}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg"
-                     style={{ backgroundColor: darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)' }}>
+                <div className="flex justify-between items-center p-3 rounded-lg" style={{ backgroundColor: colors.hoverBg }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Last Month</span>
                   <span className="font-bold" style={{ color: colors.textColor }}>₹{d.lastMonthBill}</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg"
-                     style={{ backgroundColor: darkMode ? 'rgba(34, 197, 94, 0.1)' : '#f0fdf4' }}>
+                <div className="flex justify-between items-center p-3 rounded-lg" style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
                   <span className="text-sm" style={{ color: colors.mutedText }}>Status</span>
                   <div className="flex items-center gap-2">
-                    <FiCheck className="w-4 h-4" style={{ color: colors.accent || '#22c55e' }} />
-                    <span className="font-bold" style={{ color: colors.accent || '#22c55e' }}>
-                      {d.billStatus.toUpperCase()}
-                    </span>
+                    <FiCheck className="w-4 h-4" style={{ color: colors.accent || '#10b981' }} />
+                    <span className="font-bold" style={{ color: colors.accent || '#10b981' }}>{d.billStatus.toUpperCase()}</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
+            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-                     style={{ backgroundColor: darkMode ? 'rgba(249, 115, 22, 0.2)' : '#fed7aa' }}>
-                  <FiTruck className="w-5 h-5 text-orange-600" />
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'rgba(249, 115, 22, 0.1)' }}>
+                  <FiTruck className="w-5 h-5" style={{ color: '#f97316' }}/>
                 </div>
                 <div>
                   <h3 className="text-lg font-bold" style={{ color: colors.textColor }}>Supply Schedule</h3>
@@ -422,23 +335,16 @@ const DashboardHome = () => {
                     key={time}
                     className={`flex items-center justify-between p-3 rounded-lg transition-all duration-300`}
                     style={{
-                      backgroundColor: time === d.nextSupplyTime.split(' ')[0]
-                        ? (darkMode ? 'rgba(234, 88, 12, 0.2)' : '#fff7ed')
-                        : darkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.02)',
-                      color: time === d.nextSupplyTime.split(' ')[0]
-                        ? (darkMode ? '#fdba74' : '#ea580c')
-                        : colors.textColor,
-                      border: time === d.nextSupplyTime.split(' ')[0]
-                        ? (darkMode ? '1px solid #ea580c' : '1px solid #fb923c')
-                        : 'none'
+                      backgroundColor: time === d.nextSupplyTime ? 'rgba(110, 142, 251, 0.1)' : colors.hoverBg,
+                      color: time === d.nextSupplyTime ? colors.primaryBg : colors.textColor,
+                      border: time === d.nextSupplyTime ? `1px solid ${colors.primaryBg}` : '1px solid transparent'
                     }}
                   >
                     <span className="font-medium">{time}</span>
-                    {time === d.nextSupplyTime.split(' ')[0] && (
+                    {time === d.nextSupplyTime && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs font-medium">NEXT</span>
-                        <div className="w-2 h-2 rounded-full animate-pulse"
-                             style={{ backgroundColor: darkMode ? '#fdba74' : '#ea580c' }}></div>
+                        <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: colors.primaryBg }}></div>
                       </div>
                     )}
                   </div>
@@ -446,27 +352,14 @@ const DashboardHome = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.baseColor }}>
+            <div className="rounded-2xl p-6 shadow-lg" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.borderColor}` }}>
               <h3 className="text-lg font-bold mb-4" style={{ color: colors.textColor }}>Quick Actions</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                        style={{
-                          backgroundColor: darkMode ? 'rgba(8, 145, 178, 0.2)' : '#e0f2fe',
-                          color: darkMode ? '#67e8f9' : '#0891b2',
-                          border: darkMode ? '1px solid #0891b2' : '1px solid #06b6d4'
-                        }}>
+                <button className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105" style={{ backgroundColor: colors.hoverBg, color: colors.textColor, border: `1px solid ${colors.borderColor}`}}>
                   <FiFileText className="w-5 h-5" />
                   Payment History
                 </button>
-                <button
-                  onClick={handleManageGuests}
-                  className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-                  style={{
-                    backgroundColor: darkMode ? 'rgba(5, 150, 105, 0.2)' : '#f0fdf4',
-                    color: darkMode ? '#6ee7b7' : '#059669',
-                    border: darkMode ? '1px solid #059669' : '1px solid #10b981'
-                  }}
-                >
+                <button className="w-full flex items-center justify-center gap-3 p-3 rounded-xl font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105" style={{ backgroundColor: colors.hoverBg, color: colors.textColor, border: `1px solid ${colors.borderColor}` }}>
                   <FiSettings className="w-5 h-5" />
                   Manage Guests
                 </button>

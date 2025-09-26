@@ -1,91 +1,82 @@
-import React, { useState, useContext } from 'react'
-import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, ResponsiveContainer } from 'recharts'
-import { ChevronDown, ChevronRight, Droplets, Calendar, Users, AlertTriangle } from 'lucide-react'
-import { ThemeContext } from '../UserDashboard'
-
-const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  
-  const { darkMode } = context;
-  
-  const colors = {
-    baseColor: darkMode ? '#0f0f23' : '#f8f6ff',
-    cardBg: darkMode ? '#1a1a2e' : '#ffffff',
-    textColor: darkMode ? '#e2e8f0' : '#4b0082',
-    mutedText: darkMode ? '#94a3b8' : '#666666',
-    borderColor: darkMode ? '#334155' : '#e0e0e0',
-    primaryBg: darkMode ? '#4c6ef5' : '#6e8efb',
-    primaryHover: darkMode ? '#3b5bdb' : '#5a67d8',
-    secondaryBg: darkMode ? '#7c3aed' : '#a777e3',
-    secondaryHover: darkMode ? '#6d28d9' : '#8b5cf6',
-    accent: darkMode ? '#10b981' : '#48bb78',
-    accentHover: darkMode ? '#059669' : '#38a169',
-    danger: darkMode ? '#ef4444' : '#f56565',
-    dangerHover: darkMode ? '#dc2626' : '#e53e3e',
-    chartLine: darkMode ? '#06b6d4' : '#4fd1c5',
-    chartBar: darkMode ? '#8b5cf6' : '#9f7aea',
-    chartPie1: darkMode ? '#4c6ef5' : '#667eea',
-    chartPie2: darkMode ? '#f59e0b' : '#f6ad55',
-    chartPie3: darkMode ? '#10b981' : '#68d391',
-    highlight: darkMode ? 'rgba(71, 85, 105, 0.3)' : 'rgba(102, 126, 234, 0.1)',
-    hoverBg: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.1)'
-  };
-  
-  return { darkMode, colors };
-};
+import React, { useState, useEffect, useContext } from 'react';
+import { PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, BarChart, Bar, ResponsiveContainer } from 'recharts';
+import { ChevronDown, ChevronRight, Droplets, Calendar, Users, AlertTriangle, RefreshCw, AlertCircle } from 'lucide-react';
+import { useTheme } from '../UserDashboard';
+import { axiosInstance } from '../../lib/axios';
 
 const UsageInsights = () => {
   const { darkMode, colors } = useTheme();
-  const [expandedMonths, setExpandedMonths] = useState({})
+  const [expandedMonths, setExpandedMonths] = useState({});
+  const [dailyUsageData, setDailyUsageData] = useState([]);
+  const [thirtyDayTrend, setThirtyDayTrend] = useState([]);
+  const [yearlyOverview, setYearlyOverview] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const dailyUsageData = [
-    { name: 'Primary Members', value: 220, color: colors.chartPie1 },
-    { name: 'Extra Water', value: 85, color: colors.chartPie2 },
-    { name: 'Water by Guests', value: 30, color: colors.chartPie3 }
-  ]
-
-  const monthlyLineData = [
-    { day: 1, usage: 280 }, { day: 2, usage: 320 }, { day: 3, usage: 290 },
-    { day: 4, usage: 350 }, { day: 5, usage: 310 }, { day: 6, usage: 270 },
-    { day: 7, usage: 400 }, { day: 8, usage: 290 }, { day: 9, usage: 310 },
-    { day: 10, usage: 330 }, { day: 11, usage: 280 }, { day: 12, usage: 360 },
-    { day: 13, usage: 290 }, { day: 14, usage: 320 }, { day: 15, usage: 340 },
-    { day: 16, usage: 310 }, { day: 17, usage: 290 }, { day: 18, usage: 380 },
-    { day: 19, usage: 320 }, { day: 20, usage: 300 }, { day: 21, usage: 290 },
-    { day: 22, usage: 350 }, { day: 23, usage: 310 }, { day: 24, usage: 290 },
-    { day: 25, usage: 330 }, { day: 26, usage: 370 }, { day: 27, usage: 290 },
-    { day: 28, usage: 320 }, { day: 29, usage: 310 }, { day: 30, usage: 340 }
-  ]
-
-  const yearlyBarData = [
-    { month: 'Jan', usage: 9500 }, { month: 'Feb', usage: 8800 }, { month: 'Mar', usage: 9200 },
-    { month: 'Apr', usage: 9800 }, { month: 'May', usage: 10200 }, { month: 'Jun', usage: 11500 },
-    { month: 'Jul', usage: 12800 }, { month: 'Aug', usage: 12200 }, { month: 'Sep', usage: 10800 },
-    { month: 'Oct', usage: 9600 }, { month: 'Nov', usage: 8900 }, { month: 'Dec', usage: 9100 }
-  ]
-
+  useEffect(() => {
+    const fetchInsights = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const userStr = localStorage.getItem('user');
+        if (!userStr) {
+          throw new Error("User not found in local storage.");
+        }
+        const user = JSON.parse(userStr);
+        if (!user.waterId) {
+          throw new Error("Water ID not found for the user.");
+        }
+        
+        const response = await axiosInstance.get(`/user/${user.waterId}/get-insights`);
+        
+        if (response.data.success) {
+          const { dailyUsage, thirtyDayTrend, yearlyOverview } = response.data.data;
+          
+          const pieColors = {
+            'Primary Members': colors.primaryBg,
+            'Extra Water': '#f59e0b',
+            'Water by Guests': colors.accent || '#10b981',
+          };
+          
+          const formattedPieData = dailyUsage.map(item => ({
+            ...item,
+            color: pieColors[item.name] || '#cccccc',
+          }));
+          
+          setDailyUsageData(formattedPieData);
+          setThirtyDayTrend(thirtyDayTrend);
+          setYearlyOverview(yearlyOverview);
+        } else {
+          throw new Error(response.data.message || "Failed to fetch insights.");
+        }
+      } catch (err) {
+        setError(err.message || "An unexpected error occurred.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInsights();
+  }, [colors.primaryBg, colors.accent]);
+  
   const generateFineAmount = () => {
     const amounts = [50, 75, 100, 150, 200, 250, 300, 350, 400, 500];
     return amounts[Math.floor(Math.random() * amounts.length)];
-  }
+  };
 
   const generateMonthData = (days) => {
-    const data = []
+    const data = [];
     for (let i = 1; i <= days; i++) {
-      const hasFine = Math.random() < 0.15
+      const hasFine = Math.random() < 0.15;
       data.push({
         date: i,
         waterUsed: Math.floor(Math.random() * 200) + 250,
         guests: Math.floor(Math.random() * 8),
         hasFine: hasFine,
-        fineAmount: hasFine ? generateFineAmount() : 0
-      })
+        fineAmount: hasFine ? generateFineAmount() : 0,
+      });
     }
-    return data
-  }
+    return data;
+  };
 
   const monthsData = {
     'January': { days: 31, data: generateMonthData(31) },
@@ -100,14 +91,14 @@ const UsageInsights = () => {
     'October': { days: 31, data: generateMonthData(31) },
     'November': { days: 30, data: generateMonthData(30) },
     'December': { days: 31, data: generateMonthData(31) }
-  }
+  };
 
   const toggleMonth = (month) => {
     setExpandedMonths(prev => ({
       ...prev,
       [month]: !prev[month]
-    }))
-  }
+    }));
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
@@ -119,9 +110,32 @@ const UsageInsights = () => {
         }}>
           <p className="font-medium" style={{ color: colors.textColor }}>{`${label}: ${payload[0].value}L`}</p>
         </div>
-      )
+      );
     }
-    return null
+    return null;
+  };
+  
+  if (loading) {
+      return (
+          <div className="min-h-screen p-6 flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
+              <div className="text-center">
+                  <RefreshCw className="w-12 h-12 animate-spin mx-auto mb-4" style={{ color: colors.primaryBg }} />
+                  <p className="text-lg font-semibold" style={{ color: colors.textColor }}>Loading Insights...</p>
+              </div>
+          </div>
+      );
+  }
+
+  if (error) {
+      return (
+          <div className="min-h-screen p-6 flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
+              <div className="text-center p-8 rounded-xl" style={{ backgroundColor: colors.cardBg, border: `1px solid ${colors.danger || '#ef4444'}` }}>
+                  <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: colors.danger || '#ef4444' }} />
+                  <p className="text-lg font-semibold" style={{ color: colors.textColor }}>Failed to load data</p>
+                  <p className="text-sm mt-2" style={{ color: colors.mutedText }}>{error}</p>
+              </div>
+          </div>
+      );
   }
 
   return (
@@ -130,11 +144,10 @@ const UsageInsights = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-8">
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
-            border: `1px solid ${colors.borderColor}`,
-            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
+            border: `1px solid ${colors.borderColor}`
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(110, 142, 251, 0.1)' }}>
                 <Droplets className="w-5 h-5" style={{ color: colors.primaryBg }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>Today's Usage</h3>
@@ -161,28 +174,23 @@ const UsageInsights = () => {
             <div className="flex justify-between items-center mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
               <div>
                 <p className="text-sm" style={{ color: colors.mutedText }}>Total Consumption</p>
-                <p className="text-xl font-bold" style={{ color: colors.textColor }}>335L</p>
-              </div>
-              <div className="text-right">
-                <p className="text-sm" style={{ color: colors.mutedText }}>Compared to avg.</p>
-                <p className="text-lg font-medium" style={{ color: colors.accent }}>+12%</p>
+                <p className="text-xl font-bold" style={{ color: colors.textColor }}>{dailyUsageData.reduce((sum, item) => sum + item.value, 0)}L</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
-            border: `1px solid ${colors.borderColor}`,
-            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
+            border: `1px solid ${colors.borderColor}`
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(6, 182, 212, 0.3)' : 'rgba(79, 209, 197, 0.1)' }}>
-                <Calendar className="w-5 h-5" style={{ color: colors.chartLine }} />
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(79, 209, 197, 0.1)' }}>
+                <Calendar className="w-5 h-5" style={{ color: '#4fd1c5' }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>30-Day Trend</h3>
             </div>
             <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={monthlyLineData}>
+              <LineChart data={thirtyDayTrend}>
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} vertical={false} />
                 <XAxis 
                   dataKey="day" 
@@ -199,38 +207,39 @@ const UsageInsights = () => {
                 <Line 
                   type="monotone" 
                   dataKey="usage" 
-                  stroke={colors.chartLine}
+                  stroke={'#4fd1c5'}
                   strokeWidth={2}
                   dot={false}
-                  activeDot={{ r: 6, fill: colors.chartLine }}
+                  activeDot={{ r: 6, fill: '#4fd1c5' }}
                 />
               </LineChart>
             </ResponsiveContainer>
-            <div className="flex justify-between items-center mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
+             <div className="flex justify-between items-center mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
               <div>
                 <p className="text-sm" style={{ color: colors.mutedText }}>Avg. Daily Usage</p>
-                <p className="text-lg font-medium" style={{ color: colors.textColor }}>315L</p>
+                <p className="text-lg font-medium" style={{ color: colors.textColor }}>
+                  {Math.round(thirtyDayTrend.reduce((sum, item) => sum + item.usage, 0) / (thirtyDayTrend.length || 1))}L
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-sm" style={{ color: colors.mutedText }}>Peak Usage</p>
-                <p className="text-lg font-medium" style={{ color: colors.danger }}>400L</p>
+                <p className="text-lg font-medium" style={{ color: colors.danger || '#ef4444' }}>{Math.max(0, ...thirtyDayTrend.map(item => item.usage))}L</p>
               </div>
             </div>
           </div>
 
           <div className="rounded-xl p-5 transition-all duration-200 hover:shadow-md" style={{ 
             backgroundColor: colors.cardBg,
-            border: `1px solid ${colors.borderColor}`,
-            boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
+            border: `1px solid ${colors.borderColor}`
           }}>
             <div className="flex items-center mb-4">
-              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(124, 58, 237, 0.3)' : 'rgba(159, 122, 234, 0.1)' }}>
-                <Calendar className="w-5 h-5" style={{ color: colors.chartBar }} />
+              <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(167, 119, 227, 0.1)' }}>
+                <Calendar className="w-5 h-5" style={{ color: '#a777e3' }} />
               </div>
               <h3 className="text-lg font-semibold" style={{ color: colors.textColor }}>Yearly Overview</h3>
             </div>
             <ResponsiveContainer width="100%" height={200}>
-              <BarChart data={yearlyBarData}>
+              <BarChart data={yearlyOverview}>
                 <CartesianGrid strokeDasharray="3 3" stroke={colors.borderColor} vertical={false} />
                 <XAxis 
                   dataKey="month" 
@@ -246,7 +255,7 @@ const UsageInsights = () => {
                 <Tooltip content={<CustomTooltip />} />
                 <Bar 
                   dataKey="usage" 
-                  fill={colors.chartBar}
+                  fill={colors.secondaryBg}
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
@@ -254,11 +263,15 @@ const UsageInsights = () => {
             <div className="flex justify-between items-center mt-4 pt-4" style={{ borderTop: `1px solid ${colors.borderColor}` }}>
               <div>
                 <p className="text-sm" style={{ color: colors.mutedText }}>Total Annual Usage</p>
-                <p className="text-lg font-medium" style={{ color: colors.textColor }}>112,500L</p>
+                 <p className="text-lg font-medium" style={{ color: colors.textColor }}>
+                  {yearlyOverview.reduce((sum, item) => sum + item.usage, 0)}L
+                </p>
               </div>
               <div className="text-right">
                 <p className="text-sm" style={{ color: colors.mutedText }}>Highest Month</p>
-                <p className="text-lg font-medium" style={{ color: colors.secondaryBg }}>July</p>
+                <p className="text-lg font-medium" style={{ color: colors.secondaryBg }}>
+                    {yearlyOverview.length > 0 ? yearlyOverview.reduce((max, item) => item.usage > max.usage ? item : max, yearlyOverview[0]).month : '-'}
+                </p>
               </div>
             </div>
           </div>
@@ -266,11 +279,10 @@ const UsageInsights = () => {
 
         <div className="rounded-xl p-5 mb-8" style={{ 
           backgroundColor: colors.cardBg,
-          border: `1px solid ${colors.borderColor}`,
-          boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
+          border: `1px solid ${colors.borderColor}`
         }}>
           <div className="flex items-center mb-6">
-            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
+            <div className="p-2 rounded-lg mr-3" style={{ backgroundColor: 'rgba(110, 142, 251, 0.1)' }}>
               <Calendar className="w-5 h-5" style={{ color: colors.primaryBg }} />
             </div>
             <h2 className="text-xl font-semibold" style={{ color: colors.textColor }}>Monthly Breakdown</h2>
@@ -285,7 +297,7 @@ const UsageInsights = () => {
                   onClick={() => toggleMonth(month)}
                   className="w-full p-4 flex items-center justify-between transition-colors duration-200"
                   style={{ 
-                    backgroundColor: expandedMonths[month] ? colors.highlight : 'transparent',
+                    backgroundColor: expandedMonths[month] ? colors.hoverBg : 'transparent',
                   }}
                 >
                   <div className="flex items-center">
@@ -300,13 +312,13 @@ const UsageInsights = () => {
                         <span style={{ color: colors.mutedText }}>{data.days} days</span>
                       </div>
                       <div className="flex items-center text-sm">
-                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: colors.accent }} />
+                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: colors.accent || '#10b981' }} />
                         <span style={{ color: colors.mutedText }}>
                           {data.data.reduce((sum, day) => sum + day.waterUsed, 0)}L
                         </span>
                       </div>
                       <div className="flex items-center text-sm">
-                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: colors.danger }} />
+                        <div className="w-2 h-2 rounded-full mr-2" style={{ backgroundColor: colors.danger || '#ef4444' }} />
                         <span style={{ color: colors.mutedText }}>
                           {data.data.filter(day => day.hasFine).length} fines
                         </span>
@@ -321,7 +333,7 @@ const UsageInsights = () => {
                 
                 {expandedMonths[month] && (
                   <div className="p-4" style={{ 
-                    backgroundColor: colors.highlight,
+                    backgroundColor: colors.hoverBg,
                     borderTop: `1px solid ${colors.borderColor}`
                   }}>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-80 overflow-y-auto pr-2">
@@ -341,7 +353,7 @@ const UsageInsights = () => {
                           <div className="flex justify-between items-center mb-2">
                             <span className="font-medium" style={{ color: colors.textColor }}>Day {day.date}</span>
                             {day.hasFine && (
-                              <AlertTriangle className="w-4 h-4" style={{ color: colors.danger }} />
+                              <AlertTriangle className="w-4 h-4" style={{ color: colors.danger || '#ef4444' }} />
                             )}
                           </div>
                           
@@ -351,13 +363,13 @@ const UsageInsights = () => {
                               <span style={{ color: colors.mutedText }}>{day.waterUsed}L used</span>
                             </div>
                             <div className="flex items-center">
-                              <Users className="w-3 h-3 mr-2" style={{ color: colors.accent }} />
+                              <Users className="w-3 h-3 mr-2" style={{ color: colors.accent || '#10b981' }} />
                               <span style={{ color: colors.mutedText }}>{day.guests} guests</span>
                             </div>
                           </div>
                           
                           {day.hasFine && (
-                            <div className="mt-2 text-xs font-medium" style={{ color: colors.danger }}>
+                            <div className="mt-2 text-xs font-medium" style={{ color: colors.danger || '#ef4444' }}>
                               ⚠️ Fine: ₹{day.fineAmount}
                             </div>
                           )}
@@ -373,11 +385,10 @@ const UsageInsights = () => {
 
         <div className="rounded-xl p-6 text-center" style={{ 
           backgroundColor: colors.cardBg,
-          border: `1px solid ${colors.borderColor}`,
-          boxShadow: darkMode ? '0 1px 3px rgba(0, 0, 0, 0.2)' : '0 1px 3px rgba(0, 0, 0, 0.02)'
+          border: `1px solid ${colors.borderColor}`
         }}>
           <div className="flex items-center justify-center mb-3">
-            <div className="p-2 rounded-full mr-2" style={{ backgroundColor: darkMode ? 'rgba(76, 110, 245, 0.3)' : 'rgba(102, 126, 234, 0.1)' }}>
+            <div className="p-2 rounded-full mr-2" style={{ backgroundColor: 'rgba(110, 142, 251, 0.1)' }}>
               <Droplets className="w-5 h-5" style={{ color: colors.primaryBg }} />
             </div>
             <span className="text-xl">💧</span>
