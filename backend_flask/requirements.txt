@@ -1,10 +1,9 @@
---extra-index-url https://download.pytorch.org/whl/cpu
 Flask
 flask-cors
 python-dotenv
-torch==2.2.0+cpu
-torchvision==0.17.0+cpu
-facenet-pytorch>=2.6.0
+facenet-pytorch
+torch
+torchvision
+Pillow
 numpy
 scikit-learn
-Pillow>=10.2.0,<10.3.0
