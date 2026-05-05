@@ -126,6 +126,20 @@ export const addProperty = async (req, res) => {
     const newProperty = new Property(newPropertyFields);
     await newProperty.save();
 
+    const family = await Family.findOne({ rootId, tenantCode });
+    if (!family) {
+      const newFamily = new Family({
+        rootId,
+        tenantCode,
+        members: [userid],
+        waterUsage: new Map(),
+        extraWaterDates: new Map(),
+        fineDates: [],
+        payments: []
+      });
+      await newFamily.save();
+    }
+
     const updates = {
       properties: [...(user.properties || []), rootId]
     };

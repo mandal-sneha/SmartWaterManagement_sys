@@ -756,12 +756,19 @@ export const getInsightsPageGraphData = async (req, res) => {
     const { waterid } = req.params;
     const [rootId, tenantCode] = waterid.split("_");
 
-    const family = await Family.findOne({ rootId, tenantCode });
+    let family = await Family.findOne({ rootId, tenantCode });
+    
     if (!family) {
-      return res.status(404).json({
-        success: false,
-        message: "Family data not found for the given water ID.",
+      family = new Family({
+        rootId,
+        tenantCode,
+        members: [],
+        waterUsage: new Map(),
+        extraWaterDates: new Map(),
+        fineDates: [],
+        payments: []
       });
+      await family.save();
     }
 
     const today = moment().tz("Asia/Kolkata");
@@ -896,9 +903,19 @@ export const getMonthlyUsageDetails = async (req, res) => {
     const { waterid } = req.params;
     const [rootId, tenantCode] = waterid.split("_");
     
-    const family = await Family.findOne({ rootId, tenantCode });
+    let family = await Family.findOne({ rootId, tenantCode });
+    
     if (!family) {
-      return res.status(404).json({ success: false, message: "Data not found" });
+      family = new Family({
+        rootId,
+        tenantCode,
+        members: [],
+        waterUsage: new Map(),
+        extraWaterDates: new Map(),
+        fineDates: [],
+        payments: []
+      });
+      await family.save();
     }
     
     const entryExitLogs = await EntryExitLog.find({ waterId: waterid });
@@ -930,7 +947,7 @@ export const getMonthlyUsageDetails = async (req, res) => {
           const fineDatesList = Array.isArray(family.fineDates) ? family.fineDates : [];
           const hasFine = fineDatesList.includes(dateStr);
           
-          let fraudGuestsList = [];
+          let fraudulentGuests = [];
           let totalGuestCount = 0;
           
           for (const log of entryExitLogs) {
@@ -960,7 +977,7 @@ export const getMonthlyUsageDetails = async (req, res) => {
                     fraudDate.month() === date.getMonth() && 
                     fraudDate.year() === date.getFullYear()) {
                   const guestUser = await User.findOne({ userId: fraudData.guestId });
-                  fraudGuestsList.push({
+                  fraudulentGuests.push({
                     guestName: guestUser ? guestUser.userName : "Unknown",
                     guestId: fraudData.guestId,
                     scheduledExit: fraudData.scheduledExit,
@@ -972,7 +989,7 @@ export const getMonthlyUsageDetails = async (req, res) => {
             }
           }
           
-          const fraudCount = fraudGuestsList.length;
+          const fraudCount = fraudulentGuests.length;
           const normalGuests = totalGuestCount - fraudCount;
           const fineAmount = hasFine ? 500 : (fraudCount > 0 ? fraudCount * 500 : 0);
           
@@ -980,7 +997,7 @@ export const getMonthlyUsageDetails = async (req, res) => {
             date: dayNum,
             waterUsed: usage,
             normalGuests: normalGuests,
-            fraudulentGuests: fraudGuestsList,
+            fraudulentGuests: fraudulentGuests,
             hasFine: hasFine || fraudCount > 0,
             fineAmount: fineAmount
           });
