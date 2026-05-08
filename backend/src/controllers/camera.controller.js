@@ -1,3 +1,4 @@
+// backend/src/controllers/camera.controller.js
 import { Invitation } from "../models/invitation.model.js";
 import { User } from "../models/user.model.js";
 import { Property } from "../models/property.model.js";
@@ -5,7 +6,7 @@ import { EntryExitLog } from "../models/entryexitlog.model.js";
 import { flaskEmbeddingService } from "../lib/axios.js";
 import FormData from "form-data";
 import moment from "moment-timezone";
-import nodemailer from "nodemailer";
+import { sendOtpEmail } from "../services/email.service.js";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -31,21 +32,7 @@ const sendArrivalOtp = async (invitation, guestUserId, guestEmail) => {
   const otp = Math.floor(100000 + Math.random() * 900000);
   invitation.arrivalOtp.set(guestUserId, otp.toString());
   await invitation.save();
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT),
-    secure: process.env.SMTP_PORT == 465,
-    auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-  });
-  await transporter.sendMail({
-    from: `"HydraOne" <${process.env.EMAIL_USER}>`,
-    to: guestEmail,
-    subject: "Your Guest Arrival Verification Code",
-    html: `<div style="background:#111;color:#fff;padding:40px;text-align:center;font-family:Inter,Arial,sans-serif"><h2 style="color:#8B5CF6">Welcome!</h2><p>Your arrival has been verified. Enter this code:</p><h1 style="letter-spacing:8px;color:#8B5CF6">${otp
-      .toString()
-      .split("")
-      .join(" ")}</h1><p>Use within 10 minutes near the property.</p></div>`,
-  });
+  await sendOtpEmail(guestEmail, otp, "arrival");
   return otp;
 };
 

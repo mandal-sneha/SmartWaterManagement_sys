@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {axiosInstance} from '../../lib/axios.js';
+import { axiosInstance } from '../../lib/axios.js';
+import { FiMail, FiLock, FiCheckCircle, FiAlertCircle, FiRepeat } from 'react-icons/fi';
 
 const OTPVerification = ({ email, onVerify, onBack, loading, error, onError }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -71,27 +72,31 @@ const OTPVerification = ({ email, onVerify, onBack, loading, error, onError }) =
   };
 
   return (
-    <>
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-semibold text-indigo-800 mb-2 tracking-wide">VERIFY OTP</h2>
-        <p className="text-sm text-gray-600">
-          We've sent a verification code to
+    <div className="w-full max-w-md mx-auto">
+      <div className="text-center mb-8">
+        <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-indigo-100 mb-4">
+          <FiMail className="w-8 h-8 text-indigo-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+        <p className="text-gray-500 text-sm">
+          We've sent a 6-digit verification code to
           <br />
-          <span className="font-medium text-gray-700">{email}</span>
+          <span className="font-semibold text-indigo-600">{email}</span>
         </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-2 rounded-md text-sm mb-4">
-          {error}
+        <div className="flex items-center gap-2 p-3 mb-6 rounded-lg bg-red-50 border border-red-200">
+          <FiAlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <p className="text-sm text-red-600">{error}</p>
         </div>
       )}
 
-      <div className="mb-6">
+      <div className="mb-8">
         <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
-          Enter 6-digit OTP
+          Enter Verification Code
         </label>
-        <div className="flex justify-center gap-2 mb-4">
+        <div className="flex justify-center gap-3 mb-4">
           {otp.map((digit, index) => (
             <input
               key={index}
@@ -103,46 +108,65 @@ const OTPVerification = ({ email, onVerify, onBack, loading, error, onError }) =
               onChange={(e) => handleChange(index, e.target.value)}
               onKeyDown={(e) => handleKeyDown(index, e)}
               onPaste={handlePaste}
-              className="w-12 h-12 text-center text-xl font-semibold border-2 border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              className="w-14 h-14 text-center text-2xl font-bold border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
+              style={{
+                borderColor: digit ? '#8B5CF6' : '#E5E7EB',
+                backgroundColor: digit ? '#F3F4F6' : 'white'
+              }}
               disabled={loading}
+              autoFocus={index === 0}
             />
           ))}
         </div>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="text-center">
           {resendTimer > 0 ? (
-            <p>
-              Resend OTP in <span className="font-medium text-indigo-600">{resendTimer}s</span>
+            <p className="text-sm text-gray-500">
+              Resend code in <span className="font-semibold text-indigo-600">{resendTimer}s</span>
             </p>
           ) : (
             <button
               onClick={handleResend}
-              className="text-indigo-600 hover:text-indigo-500 font-medium underline"
+              className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium text-sm transition-colors"
               disabled={loading || resendLoading}
             >
-              {resendLoading ? 'Sending...' : 'Resend OTP'}
+              <FiRepeat className="w-4 h-4" />
+              {resendLoading ? 'Sending...' : 'Resend Verification Code'}
             </button>
           )}
         </div>
       </div>
 
-      <div className="flex justify-between items-center">
+      <div className="flex gap-3">
         <button
           onClick={onBack}
           disabled={loading}
-          className="text-indigo-600 hover:text-indigo-500 font-medium disabled:opacity-50"
+          className="flex-1 px-4 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-all disabled:opacity-50"
         >
-          ← Previous
+          Back
         </button>
         <button
           onClick={handleVerify}
           disabled={loading}
-          className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-6 py-2 rounded-md font-medium hover:from-indigo-600 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex-1 px-4 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl font-medium hover:from-indigo-600 hover:to-purple-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
         >
-          {loading ? 'Verifying...' : 'Verify OTP'}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Verifying...
+            </div>
+          ) : (
+            'Verify & Continue'
+          )}
         </button>
       </div>
-    </>
+
+      <div className="mt-6 text-center">
+        <p className="text-xs text-gray-400">
+          Didn't receive the code? Check your spam folder or try resending.
+        </p>
+      </div>
+    </div>
   );
 };
 

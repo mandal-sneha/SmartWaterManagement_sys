@@ -7,12 +7,12 @@ import { EntryExitLog } from "../models/entryexitlog.model.js";
 import { generateToken } from "../utils/generate.token.js";
 import { flaskEmbeddingService } from "../lib/axios.js";
 import { v2 as cloudinary } from "cloudinary";
+import { sendOtpEmail } from "../services/email.service.js";
 import FormData from "form-data";
 import dotenv from "dotenv";
 import streamifier from "streamifier";
 import moment from "moment-timezone";
 import bcrypt from "bcryptjs";
-import nodemailer from "nodemailer";
 
 dotenv.config();
 
@@ -168,68 +168,7 @@ export const generateEmailVerificationOtp = async (req, res) => {
       { otp, expiry },
       { new: true, upsert: true }
     );
-    const transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: parseInt(process.env.SMTP_PORT),
-      secure: process.env.SMTP_PORT == 465,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    });
-    const mailOptions = {
-      from: `"HydraOne" <${process.env.EMAIL_USER}>`,
-      to: useremail,
-      subject: "Email Verification - One-Time Password",
-      html: `
-<html>
-<head>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-    </style>
-</head>
-<body style="margin: 0; padding: 0; background: #1a1a1a; font-family: 'Inter', Arial, sans-serif; min-height: 100vh;">
-    <div style="max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center;">
-        <div style="width: 100%; background: #1a1a1a; position: relative; overflow: hidden; border-radius: 20px;">
-            <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(180deg, #8B5CF6, #A855F7, #C084FC); border-radius: 20px 0 0 20px;"></div>
-            <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(180deg, #8B5CF6, #A855F7, #C084FC); border-radius: 0 20px 20px 0;"></div>
-            <div style="margin: 0 60px; padding: 40px 30px; position: relative;">
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <div style="background: linear-gradient(135deg, #8B5CF6, #A855F7); padding: 15px 40px; border-radius: 50px; display: inline-block; margin-bottom: 30px;">
-                        <h1 style="color: white; font-size: 24px; margin: 0; font-weight: 700; letter-spacing: 1px;">HydraOne</h1>
-                    </div>
-                </div>
-                <div style="text-align: center; margin-bottom: 40px;">
-                    <h2 style="color: #8B5CF6; font-size: 48px; margin: 0 0 15px 0; font-weight: 700; letter-spacing: -1px;">Almost There!</h2>
-                    <p style="color: #9CA3AF; font-size: 18px; margin: 0;">Just one more step to secure your account</p>
-                </div>
-                <div style="text-align: center; margin: 60px 0;">
-                    <p style="color: #9CA3AF; font-size: 14px; margin: 0 0 20px 0; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;">Your Verification Code</p>
-                    <div style="position: relative; display: inline-block; margin: 20px 0;">
-                        <div style="background: linear-gradient(45deg, #F59E0B, #EF4444, #EC4899, #8B5CF6); padding: 3px; border-radius: 20px;">
-                            <div style="background: #1a1a1a; border-radius: 17px; padding: 30px 40px;">
-                                <div style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #8B5CF6; font-family: 'Courier New', monospace;">${otp.toString().split('').join(' ')}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div style="background: linear-gradient(135deg, rgba(34,197,94,0.1), rgba(16,185,129,0.1)); border: 1px solid rgba(34,197,94,0.3); border-radius: 15px; padding: 25px; margin: 40px 0;">
-                    <p style="color: #10B981; font-size: 18px; font-weight: 600; margin-bottom: 10px;">Quick Reminder</p>
-                    <p style="color: #D1D5DB; font-size: 16px; margin: 0; line-height: 1.5;">This code expires in 10 minutes. Use it quickly to unlock your account!</p>
-                </div>
-                <div style="text-align: center; margin-top: 60px; padding-top: 30px; border-top: 1px solid #374151;">
-                    <p style="color: #6B7280; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} HydraOne. All rights reserved.</p>
-                    <p style="color: #6B7280; font-size: 12px; margin: 10px 0 0 0;">Didn't request this? You can safely ignore this email.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</body>
-</html>
-      `,
-    };
-    await transporter.sendMail(mailOptions);
+    await sendOtpEmail(useremail, otp, "verification");
     return res.status(200).json({
       success: true,
       message: `Verification OTP has been sent to ${useremail}.`,
