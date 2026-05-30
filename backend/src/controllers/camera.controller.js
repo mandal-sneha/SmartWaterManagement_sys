@@ -1,4 +1,3 @@
-// backend/src/controllers/camera.controller.js
 import { Invitation } from "../models/invitation.model.js";
 import { User } from "../models/user.model.js";
 import { Property } from "../models/property.model.js";
