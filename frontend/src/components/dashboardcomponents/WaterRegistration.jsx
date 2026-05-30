@@ -1,11 +1,20 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
-import { FaUsers, FaUserPlus, FaClock, FaEdit, FaTrash, FaCheck, FaTimes, FaTint, FaSpinner, FaExclamationTriangle } from 'react-icons/fa';
+import { FaUsers, FaUserPlus, FaClock, FaEdit, FaTrash, FaCheck, FaTimes, FaTint, FaSpinner, FaExclamationTriangle, FaHourglassHalf, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { axiosInstance } from "../../lib/axios.js";
 import { ThemeContext } from '../UserDashboard';
 
 const useTheme = () => {
   const { darkMode, colors: themeColors } = useContext(ThemeContext);
   return { darkMode, colors: themeColors };
+};
+
+const getSlotFromTime = () => {
+  const now = new Date();
+  const hours = now.getHours();
+  if (hours < 8) return 8;
+  if (hours < 12) return 12;
+  if (hours < 15) return 15;
+  return 8;
 };
 
 const WaterRegistration = () => {
@@ -20,43 +29,74 @@ const WaterRegistration = () => {
   const [guestSearchLoading, setGuestSearchLoading] = useState(false);
   const [guestSearchError, setGuestSearchError] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
-  const [popup, setPopup] = useState({ show: false, message: '', type: 'success' });
-  const popupRef = useRef(null);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [requestStatus, setRequestStatus] = useState(null);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+  const toastTimeoutRef = useRef(null);
 
   const currentUser = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
-    const fetchFamilyMembers = async () => {
-      try {
-        setLoading(true);
-        const userId = currentUser?.userId;
-        const response = await axiosInstance.get(`/user/${userId}/get-family-members`);
-        if (response.data.success) {
-          setFamilyMembers(response.data.members);
-        }
-      } catch (error) {
-        console.error('Error fetching family members:', error);
-      } finally {
-        setLoading(false);
-      }
+    const fetchData = async () => {
+      await fetchFamilyMembers();
+      await fetchRequestStatus();
     };
-    fetchFamilyMembers();
+    fetchData();
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (popupRef.current && !popupRef.current.contains(event.target)) {
-        setPopup({ ...popup, show: false });
+    const interval = setInterval(() => {
+      if (currentUser?.waterId) {
+        fetchRequestStatus();
       }
-    };
-    if (popup.show) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [popup.show]);
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser?.waterId]);
 
-  const showPopup = (message, type = 'success') => {
-    setPopup({ show: true, message, type });
+  const showToast = (message, type = 'success') => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast({ show: true, message, type });
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 4000);
+  };
+
+  const fetchFamilyMembers = async () => {
+    try {
+      setLoading(true);
+      const userId = currentUser?.userId;
+      const response = await axiosInstance.get(`/user/${userId}/get-family-members`);
+      if (response.data.success) {
+        setFamilyMembers(response.data.members);
+      }
+    } catch (error) {
+      console.error('Error fetching family members:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRequestStatus = async () => {
+    try {
+      const response = await axiosInstance.get(`/waterregistration/${currentUser?.waterId}/request-status`);
+      if (response.data.success && response.data.data.hasRequest) {
+        const newStatus = response.data.data;
+        setRequestStatus(newStatus);
+        if (newStatus.status === 'approved' && requestStatus?.status !== 'approved') {
+          showToast('Water request approved! Water will be allocated as requested.', 'success');
+        } else if (newStatus.status === 'rejected' && requestStatus?.status !== 'rejected') {
+          showToast(`Water request rejected: ${newStatus.rejectionReason || 'Please contact municipality'}`, 'error');
+        }
+      } else {
+        setRequestStatus(null);
+      }
+    } catch (error) {
+      console.error("Error fetching request status:", error);
+    } finally {
+      setCheckingStatus(false);
+    }
   };
 
   const isFamilyMember = (userId) => familyMembers.some(member => member.userId === userId) || userId === currentUser.userId;
@@ -117,13 +157,24 @@ const WaterRegistration = () => {
       const primaryMembers = allFamilyMembers.map(member => member.userId);
       const waterId = currentUser.waterId;
 
+      const guestsData = guests.map(g => ({
+        userId: g.userId,
+        userName: g.userName,
+        entryTime: g.entryTime,
+        stayTime: g.stayTime
+      }));
+
       const waterRes = await axiosInstance.post(`/waterregistration/${waterId}/register-for-water`, {
         primaryMembers,
         specialMembers: Array.from(spMembers),
-        extraWaterRequested: requestExtraWater
+        extraWaterRequested: requestExtraWater,
+        guests: guestsData
       });
 
-      if (!waterRes.data.success) return;
+      if (!waterRes.data.success) {
+        showToast(waterRes.data.message || 'Registration failed', 'error');
+        return;
+      }
 
       if (guests.length > 0) {
         const arrivalTime = {};
@@ -139,16 +190,21 @@ const WaterRegistration = () => {
           stayDuration
         });
 
-        if (inviteRes.data.success) showPopup('Water registration and guest invitations successful');
-        else showPopup('Registration successful but invitation failed', 'error');
-      } else {
-        showPopup('Water registration submitted successfully');
+        if (!inviteRes.data.success) {
+          showToast('Registration submitted but invitation failed', 'error');
+          return;
+        }
       }
+
+      showToast('Water registration submitted for admin approval', 'success');
+      await fetchRequestStatus();
       setSpMembers(new Set());
       setGuests([]);
       setRequestExtraWater(false);
+
     } catch (error) {
-      showPopup(error.response?.data?.message || 'Registration failed', 'error');
+      console.error("Registration error:", error);
+      showToast(error.response?.data?.message || 'Registration failed', 'error');
     } finally {
       setIsRegistering(false);
     }
@@ -160,15 +216,64 @@ const WaterRegistration = () => {
     color: colors.textColor,
   };
 
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
-      <FaSpinner className="animate-spin" size={48} style={{ color: colors.primaryBg }} />
-    </div>
-  );
+  if (loading || checkingStatus) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: colors.baseColor }}>
+        <FaSpinner className="animate-spin" size={48} style={{ color: colors.primaryBg }} />
+      </div>
+    );
+  }
+
+  const isPending = requestStatus && requestStatus.hasRequest && requestStatus.status === 'pending';
+  const isApproved = requestStatus && requestStatus.hasRequest && requestStatus.status === 'approved';
+  const isRejected = requestStatus && requestStatus.hasRequest && requestStatus.status === 'rejected';
 
   return (
     <div className="min-h-screen p-6" style={{ backgroundColor: colors.baseColor }}>
+      {toast.show && (
+        <div className="fixed top-6 right-6 z-50 animate-in slide-in-from-top-2 duration-300">
+          <div className={`rounded-xl shadow-2xl px-6 py-4 flex items-center gap-3 border ${
+            toast.type === 'success' 
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-800' 
+              : 'bg-rose-50 border-rose-300 text-rose-800'
+          }`}>
+            {toast.type === 'success' ? <FaCheckCircle size={20} /> : <FaExclamationTriangle size={20} />}
+            <span className="text-sm font-medium">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
+        {isPending && (
+          <div className="mb-6 rounded-2xl p-4 border bg-amber-50 border-amber-200 flex items-center gap-3">
+            <FaHourglassHalf className="text-amber-600" size={24} />
+            <div>
+              <p className="text-amber-800 font-semibold">Request Pending Approval</p>
+              <p className="text-amber-600 text-sm">Your water request has been submitted and is awaiting admin approval.</p>
+            </div>
+          </div>
+        )}
+
+        {isApproved && (
+          <div className="mb-6 rounded-2xl p-4 border bg-emerald-50 border-emerald-200 flex items-center gap-3">
+            <FaCheckCircle className="text-emerald-600" size={24} />
+            <div>
+              <p className="text-emerald-800 font-semibold">Request Approved!</p>
+              <p className="text-emerald-600 text-sm">Water will be allocated as requested. You can submit a new request for next slot.</p>
+            </div>
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="mb-6 rounded-2xl p-4 border bg-rose-50 border-rose-200 flex items-center gap-3">
+            <FaTimesCircle className="text-rose-600" size={24} />
+            <div>
+              <p className="text-rose-800 font-semibold">Request Rejected</p>
+              <p className="text-rose-600 text-sm">{requestStatus.rejectionReason || 'Please contact municipality for more information.'}</p>
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="rounded-2xl p-6 border shadow-lg" style={{ backgroundColor: colors.cardBg, borderColor: colors.borderColor }}>
             <div className="flex items-center gap-3 mb-6">
@@ -198,8 +303,8 @@ const WaterRegistration = () => {
               <button onClick={() => setRequestExtraWater(!requestExtraWater)} className="w-full py-4 rounded-xl font-semibold border-2 transition-all" style={{ backgroundColor: requestExtraWater ? colors.primaryBg : 'transparent', color: requestExtraWater ? '#fff' : colors.textColor, borderColor: requestExtraWater ? colors.primaryBg : colors.borderColor }}>
                 {requestExtraWater ? '✓ Extra Water Requested' : 'Request Extra Water'}
               </button>
-              <button onClick={handleRegisterForWater} disabled={isRegistering} className="w-full py-5 rounded-xl font-bold text-xl text-white shadow-lg disabled:opacity-50" style={{ background: colors.sidebarBg }}>
-                {isRegistering ? 'Processing...' : 'Register for Water'}
+              <button onClick={handleRegisterForWater} disabled={isRegistering || isPending} className="w-full py-5 rounded-xl font-bold text-xl text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: colors.sidebarBg }}>
+                {isRegistering ? <FaSpinner className="animate-spin mx-auto" /> : (isPending ? 'Request Pending' : 'Register for Water')}
               </button>
             </div>
           </div>
@@ -218,7 +323,7 @@ const WaterRegistration = () => {
                     <img src={guest.userProfilePhoto || "https://via.placeholder.com/40"} className="w-10 h-10 rounded-full object-cover" />
                     <div>
                       <h4 className="font-bold" style={{ color: colors.textColor }}>{guest.userName}</h4>
-                      <p className="text-xs" style={{ color: colors.mutedText }}>Entry: {guest.entryTime} • {guest.stayTime}</p>
+                      <p className="text-xs" style={{ color: colors.mutedText }}>Entry: {guest.entryTime} • {guest.stayTime} hrs</p>
                     </div>
                   </div>
                   <button onClick={() => setGuests(guests.filter(g => g.id !== guest.id))} className="text-red-500 p-2"><FaTrash /></button>
@@ -226,54 +331,19 @@ const WaterRegistration = () => {
               ))}
             </div>
             <div className="space-y-4 border-t pt-6" style={{ borderColor: colors.borderColor }}>
-              {guestSearchError && (
-                <p className="text-sm text-red-500">{guestSearchError}</p>
-              )}
-              <input
-                type="text"
-                placeholder="Guest User ID"
-                value={newGuest.name}
-                onChange={(e) => setNewGuest({...newGuest, name: e.target.value})}
-                className="w-full p-4 rounded-xl border outline-none"
-                style={inputStyle}
-              />
+              {guestSearchError && <p className="text-sm text-red-500">{guestSearchError}</p>}
+              <input type="text" placeholder="Guest User ID" value={newGuest.name} onChange={(e) => setNewGuest({...newGuest, name: e.target.value})} className="w-full p-4 rounded-xl border outline-none" style={inputStyle} />
               <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="time"
-                  value={newGuest.entryTime}
-                  onChange={(e) => setNewGuest({...newGuest, entryTime: e.target.value})}
-                  className="p-4 rounded-xl border outline-none"
-                  style={inputStyle}
-                />
-                <input
-                  type="text"
-                  placeholder="Stay Duration (hours)"
-                  value={newGuest.stayTime}
-                  onChange={(e) => setNewGuest({...newGuest, stayTime: e.target.value})}
-                  className="p-4 rounded-xl border outline-none"
-                  style={inputStyle}
-                />
+                <input type="time" value={newGuest.entryTime} onChange={(e) => setNewGuest({...newGuest, entryTime: e.target.value})} className="p-4 rounded-xl border outline-none" style={inputStyle} />
+                <input type="number" placeholder="Stay Duration (hours)" value={newGuest.stayTime} onChange={(e) => setNewGuest({...newGuest, stayTime: e.target.value})} className="p-4 rounded-xl border outline-none" style={inputStyle} />
               </div>
-              <button
-                onClick={addGuest}
-                className="w-full py-4 rounded-xl text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 cursor-pointer"
-              >
+              <button onClick={addGuest} className="w-full py-4 rounded-xl text-white font-bold shadow-md hover:shadow-lg transition-all duration-200 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 cursor-pointer">
                 + Add Guest
               </button>
             </div>
           </div>
         </div>
       </div>
-
-      {popup.show && (
-        <div className="fixed inset-0 flex items-center justify-center z-[1000] p-4 bg-black/50">
-          <div ref={popupRef} className="max-w-sm w-full p-6 rounded-2xl shadow-2xl text-center" style={{ backgroundColor: colors.cardBg }}>
-            {popup.type === 'error' ? <FaExclamationTriangle className="mx-auto mb-4 text-red-500" size={48} /> : <FaCheck className="mx-auto mb-4 text-green-500" size={48} />}
-            <p className="text-lg font-bold mb-6" style={{ color: colors.textColor }}>{popup.message}</p>
-            <button onClick={() => setPopup({...popup, show: false})} className="w-full py-3 rounded-xl text-white font-bold" style={{ backgroundColor: colors.primaryBg }}>Close</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

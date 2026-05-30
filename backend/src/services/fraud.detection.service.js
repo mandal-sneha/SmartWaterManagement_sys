@@ -62,7 +62,6 @@ const detectEarlyExits = async () => {
             }
         }
         
-        console.log(`Fraud detection completed at ${moment().tz("Asia/Kolkata").format("YYYY-MM-DD HH:mm:ss")}`);
     } catch (error) {
         console.error("Error in fraud detection:", error);
     }
