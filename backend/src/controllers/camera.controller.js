@@ -10,7 +10,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const SIMILARITY_THRESHOLD = 0.7;
+const SIMILARITY_THRESHOLD = 0.62;
 const LOCATION_RADIUS_METERS = 200;
 
 function getDistance(lat1, lon1, lat2, lon2) {
