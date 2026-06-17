@@ -7,7 +7,6 @@ face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_fronta
 
 EMBEDDING_DIM = 512
 
-
 def _bytes_to_bgr(image_bytes):
     arr = np.frombuffer(image_bytes, np.uint8)
     return cv2.imdecode(arr, cv2.IMREAD_COLOR)

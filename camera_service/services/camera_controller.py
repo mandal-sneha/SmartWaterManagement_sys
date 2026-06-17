@@ -2,7 +2,12 @@ from flask import jsonify
 import requests
 import os
 
-FLASK_EMBEDDING_URL = os.getenv("FLASK_EMBEDDING_SERVICE_URL", "http://127.0.0.1:5001")
+_env = os.getenv("ENVIRONMENT", "development")
+
+if _env == "production":
+    FLASK_EMBEDDING_URL = "https://hydraone-flask-backend.onrender.com"
+else:
+    FLASK_EMBEDDING_URL = os.getenv("FLASK_EMBEDDING_SERVICE_URL", "http://127.0.0.1:5001")
 
 def handle_extract_live_embedding(request):
     if "image" not in request.files:
@@ -28,11 +33,9 @@ def handle_extract_live_embedding(request):
         if not embedding:
             return jsonify({"error": "No embedding returned"}), 400
 
-        return jsonify({"live_embedding": embedding}), 200
+        return jsonify({"embedding": embedding}), 200
 
     except requests.exceptions.Timeout:
         return jsonify({"error": "Embedding service timed out"}), 504
-    except requests.exceptions.ConnectionError:
-        return jsonify({"error": "Cannot reach embedding service"}), 503
-    except Exception as ex:
-        return jsonify({"error": f"Processing error: {str(ex)}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

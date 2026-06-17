@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const isProduction = import.meta.env.VITE_ENVIRONMENT === "production";
+
 export const axiosInstance = axios.create({
-    baseURL: "http://localhost:5000",
+    baseURL: isProduction
+        ? "https://hydraone-backend.onrender.com"
+        : "http://localhost:5000",
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'

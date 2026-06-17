@@ -30,10 +30,6 @@ const waterRegistrationSchema = new mongoose.Schema({
         enum: ['pending', 'approved', 'rejected'],
         default: 'pending'
     },
-    rejectionReason: {
-        type: String,
-        default: ''
-    },
     submittedAt: {
         type: Date,
         default: Date.now
