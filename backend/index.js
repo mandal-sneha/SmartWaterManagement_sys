@@ -33,7 +33,7 @@ const io = new Server(httpServer, {
 initializeSocket(io);
 
 app.use(cors({
-    origin: ["http://localhost:5173", "https://www.hydraone.onrender.com"], 
+    origin: ["http://localhost:5173", "https://hydraone.onrender.com"], 
     credentials: true, 
 }));
 
