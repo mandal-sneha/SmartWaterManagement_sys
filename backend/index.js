@@ -22,15 +22,9 @@ const app = express();
 
 const httpServer = createServer(app);
 
-const isProduction = process.env.ENVIRONMENT === "production";
-
-const allowedOrigins = isProduction
-  ? ["https://hydraone.onrender.com", "https://hydraone-backend.onrender.com"]
-  : ["http://localhost:5173"];
-
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: ["http://localhost:5173", "https://hydraone.onrender.com"],
     methods: ["GET", "POST"],
     credentials: true
   }
@@ -39,12 +33,12 @@ const io = new Server(httpServer, {
 initializeSocket(io);
 
 app.use(cors({
-    origin: allowedOrigins,
-    credentials: true,
+    origin: ["http://localhost:5173", "https://www.hydraone.onrender.com"], 
+    credentials: true, 
 }));
 
 app.use(express.json());
-app.use(fileUpload());
+app.use(fileUpload());  
 
 app.use("/user", userRoutes);
 app.use("/tenant", tenantRoutes);
